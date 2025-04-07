@@ -47,7 +47,7 @@ export const useProfiles = () => {
 
         if (error) throw error;
         
-        return (profiles as UserWithSkills[]).map(mapProfileToUser);
+        return (profiles as unknown as UserWithSkills[]).map(mapProfileToUser);
       } catch (error: any) {
         toast({
           title: "Error fetching profiles",
@@ -80,7 +80,7 @@ export const useProfile = (userId: string | undefined) => {
 
         if (error) throw error;
         
-        return mapProfileToUser(profile as UserWithSkills);
+        return mapProfileToUser(profile as unknown as UserWithSkills);
       } catch (error: any) {
         toast({
           title: "Error fetching profile",

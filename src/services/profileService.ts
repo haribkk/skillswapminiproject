@@ -16,7 +16,7 @@ export const updateUserProfile = async (user: User) => {
         location_preference: user.locationPreference,
         availability: user.availability,
         profile_picture: user.profilePicture,
-      })
+      } as any)
       .eq('id', user.id);
 
     if (profileError) throw profileError;
@@ -38,7 +38,7 @@ export const updateUserProfile = async (user: User) => {
 
       const { error: insertTeachableError } = await supabase
         .from('teachable_skills')
-        .insert(teachableSkillsData);
+        .insert(teachableSkillsData as any);
 
       if (insertTeachableError) throw insertTeachableError;
     }
@@ -59,7 +59,7 @@ export const updateUserProfile = async (user: User) => {
 
       const { error: insertDesiredError } = await supabase
         .from('desired_skills')
-        .insert(desiredSkillsData);
+        .insert(desiredSkillsData as any);
 
       if (insertDesiredError) throw insertDesiredError;
     }
