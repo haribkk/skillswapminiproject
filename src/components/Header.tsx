@@ -2,11 +2,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, User } from 'lucide-react';
+import { MessageSquare, User, LogOut } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 const Header: React.FC = () => {
   const { currentUser } = useApp();
+  const { user, signOut } = useAuth();
+
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
 
   return (
     <header className="bg-white shadow-sm">
@@ -20,7 +39,7 @@ const Header: React.FC = () => {
             Browse Skills
           </Link>
           
-          {currentUser ? (
+          {user ? (
             <div className="flex items-center space-x-4">
               <Link to="/messages" className="relative">
                 <Button variant="ghost" size="icon">
@@ -28,19 +47,32 @@ const Header: React.FC = () => {
                 </Button>
               </Link>
               
-              <Link to="/profile" className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full overflow-hidden">
-                  <img 
-                    src={currentUser.profilePicture} 
-                    alt={currentUser.name} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <span className="hidden md:inline">{currentUser.name}</span>
-              </Link>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={currentUser?.profilePicture} alt={currentUser?.name || user.email} />
+                      <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name) : user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile/edit">Edit Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
-            <Link to="/login">
+            <Link to="/auth">
               <Button variant="outline">
                 <User size={16} className="mr-2" />
                 Sign In

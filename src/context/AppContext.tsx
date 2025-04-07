@@ -1,7 +1,10 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, Conversation, SwapProposal, Message } from '../types';
-import { users as mockUsers, conversations as mockConversations, swapProposals as mockSwapProposals } from '../data/mockData';
+import { conversations as mockConversations, swapProposals as mockSwapProposals } from '../data/mockData';
+import { useAuth } from './AuthContext';
+import { useProfiles, useProfile } from '../hooks/useProfiles';
+import { updateUserProfile as updateProfileService } from '../services/profileService';
 
 interface AppContextType {
   currentUser: User | null;
@@ -14,16 +17,28 @@ interface AppContextType {
   updateSwapProposalStatus: (proposalId: string, status: SwapProposal['status']) => void;
   getConversation: (userId: string, otherUserId: string) => Conversation | undefined;
   getUserById: (userId: string) => User | undefined;
-  updateUserProfile: (updatedUser: User) => void;
+  updateUserProfile: (updatedUser: User) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(mockUsers[0]); // For demo, default to the first user
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const { user } = useAuth();
+  const { data: profiles = [] } = useProfiles();
+  const { data: currentUserProfile } = useProfile(user?.id);
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [swapProposals, setSwapProposals] = useState<SwapProposal[]>(mockSwapProposals);
+
+  // Update current user when the profile or auth state changes
+  useEffect(() => {
+    if (currentUserProfile) {
+      setCurrentUser(currentUserProfile);
+    } else if (!user) {
+      setCurrentUser(null);
+    }
+  }, [currentUserProfile, user]);
 
   const sendMessage = (messageData: Omit<Message, 'id' | 'timestamp' | 'read'>) => {
     const newMessage: Message = {
@@ -121,27 +136,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const getUserById = (userId: string) => {
-    return users.find(user => user.id === userId);
+    return profiles.find(user => user.id === userId);
   };
   
-  const updateUserProfile = (updatedUser: User) => {
-    // Update current user
-    if (currentUser && currentUser.id === updatedUser.id) {
+  const updateUserProfile = async (updatedUser: User) => {
+    const success = await updateProfileService(updatedUser);
+    if (success) {
       setCurrentUser(updatedUser);
     }
-    
-    // Update user in users array
-    const updatedUsers = users.map(user => 
-      user.id === updatedUser.id ? updatedUser : user
-    );
-    setUsers(updatedUsers);
+    return success;
   };
 
   return (
     <AppContext.Provider
       value={{
         currentUser,
-        users,
+        users: profiles,
         conversations,
         swapProposals,
         setCurrentUser,

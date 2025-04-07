@@ -3,14 +3,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Search, Users, MessageSquare, CheckCircle } from 'lucide-react';
-import { useApp } from '../context/AppContext';
 import UserCard from '../components/UserCard';
+import { useProfiles } from '../hooks/useProfiles';
+import { useAuth } from '../context/AuthContext';
 
 const Home: React.FC = () => {
-  const { users } = useApp();
+  const { data: profiles = [], isLoading } = useProfiles();
+  const { user } = useAuth();
   
   // Get featured users to display (up to 4 most recently joined users)
-  const featuredUsers = [...users]
+  const featuredUsers = [...profiles]
     .sort((a, b) => new Date(b.joinedDate).getTime() - new Date(a.joinedDate).getTime())
     .slice(0, 4);
   
@@ -31,7 +33,11 @@ const Home: React.FC = () => {
                 <Link to="/browse">Find Skills</Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="text-lg px-8">
-                <Link to="/profile">Share Your Skills</Link>
+                {user ? (
+                  <Link to="/profile">Share Your Skills</Link>
+                ) : (
+                  <Link to="/auth">Join Now</Link>
+                )}
               </Button>
             </div>
           </div>
@@ -94,11 +100,24 @@ const Home: React.FC = () => {
             Meet some of our community members who are ready to share their expertise and learn new skills.
           </p>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredUsers.map(user => (
-              <UserCard key={user.id} user={user} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="text-center py-10">Loading featured users...</div>
+          ) : featuredUsers.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredUsers.map(user => (
+                <UserCard key={user.id} user={user} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground mb-6">No users have joined yet. Be the first!</p>
+              {!user && (
+                <Button asChild>
+                  <Link to="/auth">Create Your Profile</Link>
+                </Button>
+              )}
+            </div>
+          )}
           
           <div className="text-center mt-10">
             <Button asChild variant="outline">

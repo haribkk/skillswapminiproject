@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { useForm } from 'react-hook-form';
 import { 
   Form, 
@@ -27,6 +28,7 @@ import { toast } from '@/components/ui/use-toast';
 import { User, Skill, ProficiencyLevel, LocationPreference } from '../types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Camera, Upload } from 'lucide-react';
+import { uploadProfilePicture } from '../services/profileService';
 
 type FormValues = {
   name: string;
@@ -39,6 +41,7 @@ type FormValues = {
 
 const EditProfile: React.FC = () => {
   const { currentUser, updateUserProfile } = useApp();
+  const { user } = useAuth();
   const navigate = useNavigate();
   
   const [teachableSkills, setTeachableSkills] = useState<Skill[]>(
@@ -53,22 +56,65 @@ const EditProfile: React.FC = () => {
     useState<ProficiencyLevel>('intermediate');
   
   const [newDesiredSkill, setNewDesiredSkill] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Add state for profile picture
   const [profilePicture, setProfilePicture] = useState<string>(
     currentUser?.profilePicture || ''
   );
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Reset form when currentUser changes
+  useEffect(() => {
+    if (currentUser) {
+      setTeachableSkills(currentUser.teachableSkills || []);
+      setDesiredSkills(currentUser.desiredSkills || []);
+      setProfilePicture(currentUser.profilePicture || '');
+      
+      form.reset({
+        name: currentUser.name,
+        email: currentUser.email,
+        bio: currentUser.bio || '',
+        location: currentUser.location || '',
+        locationPreference: currentUser.locationPreference || 'both',
+        availability: currentUser.availability || '',
+      });
+    }
+  }, [currentUser]);
 
   // Handle profile picture change
-  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setProfilePicture(result);
-      };
-      reader.readAsDataURL(file);
+    if (file && user) {
+      setIsUploading(true);
+      
+      try {
+        // Show temporary preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          setProfilePicture(result);
+        };
+        reader.readAsDataURL(file);
+        
+        // Upload to Supabase
+        const uploadedUrl = await uploadProfilePicture(user.id, file);
+        if (uploadedUrl) {
+          setProfilePicture(uploadedUrl);
+          toast({
+            title: "Upload successful",
+            description: "Your profile picture has been updated."
+          });
+        }
+      } catch (error) {
+        toast({
+          title: "Upload failed",
+          description: "There was an error uploading your profile picture.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -92,7 +138,7 @@ const EditProfile: React.FC = () => {
     },
   });
   
-  if (!currentUser) {
+  if (!currentUser || !user) {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <h1 className="text-3xl font-bold mb-4">Sign In Required</h1>
@@ -100,7 +146,7 @@ const EditProfile: React.FC = () => {
           You need to sign in to edit your profile.
         </p>
         <Button asChild>
-          <Link to="/login">Sign In</Link>
+          <Link to="/auth">Sign In</Link>
         </Button>
       </div>
     );
@@ -141,26 +187,38 @@ const EditProfile: React.FC = () => {
     setDesiredSkills(desiredSkills.filter(skill => skill.id !== skillId));
   };
   
-  const onSubmit = (data: FormValues) => {
-    // Create updated user object
-    const updatedUser: User = {
-      ...currentUser,
-      ...data,
-      teachableSkills,
-      desiredSkills,
-      profilePicture, // Include the updated profile picture
-    };
+  const onSubmit = async (data: FormValues) => {
+    if (isSubmitting) return;
     
-    // Update user profile
-    updateUserProfile(updatedUser);
+    setIsSubmitting(true);
     
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
-    
-    // Navigate back to profile page
-    navigate('/profile');
+    try {
+      // Create updated user object
+      const updatedUser: User = {
+        ...currentUser,
+        ...data,
+        teachableSkills,
+        desiredSkills,
+        profilePicture,
+      };
+      
+      // Update user profile
+      const success = await updateUserProfile(updatedUser);
+      
+      if (success) {
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been successfully updated.",
+        });
+        
+        // Navigate back to profile page
+        navigate('/profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -446,7 +504,9 @@ const EditProfile: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </form>
       </Form>
