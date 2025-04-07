@@ -25,6 +25,8 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { User, Skill, ProficiencyLevel, LocationPreference } from '../types';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Camera, Upload } from 'lucide-react';
 
 type FormValues = {
   name: string;
@@ -51,6 +53,33 @@ const EditProfile: React.FC = () => {
     useState<ProficiencyLevel>('intermediate');
   
   const [newDesiredSkill, setNewDesiredSkill] = useState('');
+  
+  // Add state for profile picture
+  const [profilePicture, setProfilePicture] = useState<string>(
+    currentUser?.profilePicture || ''
+  );
+
+  // Handle profile picture change
+  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        setProfilePicture(result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
   
   const form = useForm<FormValues>({
     defaultValues: {
@@ -119,6 +148,7 @@ const EditProfile: React.FC = () => {
       ...data,
       teachableSkills,
       desiredSkills,
+      profilePicture, // Include the updated profile picture
     };
     
     // Update user profile
@@ -139,6 +169,47 @@ const EditProfile: React.FC = () => {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {/* Profile Photo Upload */}
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-semibold mb-4">Profile Photo</h2>
+              <div className="flex flex-col items-center">
+                <div className="relative w-32 h-32 mb-4">
+                  <Avatar className="w-full h-full">
+                    <AvatarImage src={profilePicture} />
+                    <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name) : 'U'}</AvatarFallback>
+                  </Avatar>
+                  <label 
+                    htmlFor="profile-photo-upload" 
+                    className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors"
+                  >
+                    <Camera size={18} />
+                    <input 
+                      type="file" 
+                      id="profile-photo-upload" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleProfilePictureChange}
+                    />
+                  </label>
+                </div>
+                <p className="text-sm text-muted-foreground mb-2">Upload a profile photo to help others recognize you</p>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Button type="button" variant="outline" size="sm" className="cursor-pointer">
+                    <Upload size={16} className="mr-2" />
+                    Choose Photo
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={handleProfilePictureChange}
+                    />
+                  </Button>
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Personal Information */}
             <Card>

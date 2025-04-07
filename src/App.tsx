@@ -16,6 +16,7 @@ import Messages from "./pages/Messages";
 import SwapProposalForm from "./pages/SwapProposalForm";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
+import HowItWorks from "./pages/HowItWorks";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
                 <Route path="/messages/:userId" element={<Messages />} />
                 <Route path="/swap-proposal/new/:userId" element={<SwapProposalForm />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/how-it-works" element={<HowItWorks />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

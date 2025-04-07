@@ -6,22 +6,35 @@ import SkillBadge from './SkillBadge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Star } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 interface UserCardProps {
   user: User;
 }
 
 const UserCard: React.FC<UserCardProps> = ({ user }) => {
+  // Get initials for avatar fallback
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
   return (
     <Card className="h-full flex flex-col">
       <CardContent className="pt-6 flex-grow">
         <div className="flex flex-col items-center mb-4">
           <div className="w-20 h-20 rounded-full overflow-hidden mb-3">
-            <img 
-              src={user.profilePicture} 
-              alt={user.name} 
-              className="w-full h-full object-cover"
-            />
+            <Avatar className="w-full h-full">
+              <AvatarImage 
+                src={user.profilePicture} 
+                alt={user.name} 
+                className="w-full h-full object-cover"
+              />
+              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+            </Avatar>
           </div>
           <h3 className="text-lg font-semibold text-center">{user.name}</h3>
           <div className="flex items-center text-yellow-500 mt-1">

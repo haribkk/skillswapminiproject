@@ -3,8 +3,17 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Search, Users, MessageSquare, CheckCircle } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import UserCard from '../components/UserCard';
 
 const Home: React.FC = () => {
+  const { users } = useApp();
+  
+  // Get featured users to display (up to 4 most recently joined users)
+  const featuredUsers = [...users]
+    .sort((a, b) => new Date(b.joinedDate).getTime() - new Date(a.joinedDate).getTime())
+    .slice(0, 4);
+  
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -77,8 +86,33 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      {/* Featured Categories */}
+      {/* Featured Users */}
       <section className="py-16 bg-secondary/30">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-6">Featured Skill Swappers</h2>
+          <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
+            Meet some of our community members who are ready to share their expertise and learn new skills.
+          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredUsers.map(user => (
+              <UserCard key={user.id} user={user} />
+            ))}
+          </div>
+          
+          <div className="text-center mt-10">
+            <Button asChild variant="outline">
+              <Link to="/browse">
+                View All Skill Swappers
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Categories */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Popular Skill Categories</h2>
           
