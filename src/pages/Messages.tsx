@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -12,7 +11,7 @@ import { Link } from 'react-router-dom';
 const MessagesPage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const navigate = useNavigate();
-  const { currentUser, users, conversations, sendMessage } = useApp();
+  const { currentUser, users, conversations, sendMessage, getConversation } = useApp();
   
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -22,11 +21,7 @@ const MessagesPage: React.FC = () => {
   
   // Get conversation if it exists
   const conversation = userId && currentUser 
-    ? conversations.find(
-        conv => 
-          conv.participantIds.includes(currentUser.id) && 
-          conv.participantIds.includes(userId)
-      ) 
+    ? getConversation(currentUser.id, userId)
     : undefined;
   
   // Scroll to bottom of messages when conversation changes

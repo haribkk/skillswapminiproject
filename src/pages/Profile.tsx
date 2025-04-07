@@ -1,14 +1,13 @@
 
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import SkillBadge from '../components/SkillBadge';
 import SwapProposalCard from '../components/SwapProposalCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Calendar, MapPin, Star, Clock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { MessageSquare, Calendar, MapPin, Star, Clock, Edit } from 'lucide-react';
 
 const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
@@ -71,7 +70,7 @@ const ProfilePage: React.FC = () => {
                 
                 {!isCurrentUser && (
                   <Button asChild className="w-full">
-                    <Link to={`/messages/new/${user.id}`}>
+                    <Link to={`/messages/${user.id}`}>
                       <MessageSquare size={16} className="mr-2" />
                       Message
                     </Link>
@@ -79,8 +78,11 @@ const ProfilePage: React.FC = () => {
                 )}
                 
                 {isCurrentUser && (
-                  <Button variant="outline" className="w-full">
-                    Edit Profile
+                  <Button asChild variant="outline" className="w-full">
+                    <Link to="/profile/edit">
+                      <Edit size={16} className="mr-2" />
+                      Edit Profile
+                    </Link>
                   </Button>
                 )}
               </div>

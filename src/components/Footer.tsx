@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
               <ul className="space-y-2 text-sm">
                 <li><Link to="/browse" className="text-muted-foreground hover:text-foreground">Browse Skills</Link></li>
                 <li><Link to="/messages" className="text-muted-foreground hover:text-foreground">Messages</Link></li>
-                <li><Link to="/how-it-works" className="text-muted-foreground hover:text-foreground">How It Works</Link></li>
+                <li><Link to="/about" className="text-muted-foreground hover:text-foreground">How It Works</Link></li>
               </ul>
             </div>
             

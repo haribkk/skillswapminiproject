@@ -11,9 +11,11 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Browse from "./pages/Browse";
 import Profile from "./pages/Profile";
+import EditProfile from "./pages/EditProfile";
 import Messages from "./pages/Messages";
 import SwapProposalForm from "./pages/SwapProposalForm";
 import NotFound from "./pages/NotFound";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
@@ -32,9 +34,11 @@ const App = () => (
                 <Route path="/browse" element={<Browse />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:userId" element={<Profile />} />
+                <Route path="/profile/edit" element={<EditProfile />} />
                 <Route path="/messages" element={<Messages />} />
                 <Route path="/messages/:userId" element={<Messages />} />
                 <Route path="/swap-proposal/new/:userId" element={<SwapProposalForm />} />
+                <Route path="/about" element={<About />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </main>

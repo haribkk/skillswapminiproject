@@ -14,6 +14,7 @@ interface AppContextType {
   updateSwapProposalStatus: (proposalId: string, status: SwapProposal['status']) => void;
   getConversation: (userId: string, otherUserId: string) => Conversation | undefined;
   getUserById: (userId: string) => User | undefined;
+  updateUserProfile: (updatedUser: User) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -122,6 +123,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const getUserById = (userId: string) => {
     return users.find(user => user.id === userId);
   };
+  
+  const updateUserProfile = (updatedUser: User) => {
+    // Update current user
+    if (currentUser && currentUser.id === updatedUser.id) {
+      setCurrentUser(updatedUser);
+    }
+    
+    // Update user in users array
+    const updatedUsers = users.map(user => 
+      user.id === updatedUser.id ? updatedUser : user
+    );
+    setUsers(updatedUsers);
+  };
 
   return (
     <AppContext.Provider
@@ -136,6 +150,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         updateSwapProposalStatus,
         getConversation,
         getUserById,
+        updateUserProfile,
       }}
     >
       {children}

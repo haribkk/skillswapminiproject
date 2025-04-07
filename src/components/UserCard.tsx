@@ -59,7 +59,7 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
           <Link to={`/profile/${user.id}`}>View Profile</Link>
         </Button>
         <Button className="w-1/2" asChild>
-          <Link to={`/messages/new/${user.id}`}>
+          <Link to={`/messages/${user.id}`}>
             <MessageSquare size={16} className="mr-2" />
             Message
           </Link>
