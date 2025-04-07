@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { UserWithSkills } from '@/integrations/supabase/types';
+import { UserWithSkills } from '@/types/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { User } from '@/types';
 
