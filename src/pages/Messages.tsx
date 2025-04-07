@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const MessagesPage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
@@ -15,6 +17,7 @@ const MessagesPage: React.FC = () => {
   
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState('all');
   
   // Get other user if userId is provided
   const otherUser = userId ? users.find(user => user.id === userId) : undefined;
@@ -23,6 +26,24 @@ const MessagesPage: React.FC = () => {
   const conversation = userId && currentUser 
     ? getConversation(currentUser.id, userId)
     : undefined;
+  
+  // Filter conversations based on active tab
+  const filteredConversations = conversations.filter(conv => {
+    if (!currentUser) return false;
+    
+    if (activeTab === 'all') return true;
+    
+    const otherParticipantId = conv.participantIds.find(id => id !== currentUser.id);
+    const lastMessage = conv.messages[conv.messages.length - 1];
+    
+    if (activeTab === 'sent') {
+      return lastMessage && lastMessage.senderId === currentUser.id;
+    } else if (activeTab === 'received') {
+      return lastMessage && lastMessage.senderId !== currentUser.id;
+    }
+    
+    return true;
+  });
   
   // Scroll to bottom of messages when conversation changes
   useEffect(() => {
@@ -76,11 +97,24 @@ const MessagesPage: React.FC = () => {
         <div className="w-full md:w-72 bg-card border-r hidden md:block overflow-y-auto">
           <div className="p-4 border-b">
             <h2 className="text-lg font-semibold">Messages</h2>
+            
+            <Tabs 
+              defaultValue="all" 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="mt-3"
+            >
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="received">Received</TabsTrigger>
+                <TabsTrigger value="sent">Sent</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           
           <div>
-            {conversations.length > 0 ? (
-              conversations.map((conv) => (
+            {filteredConversations.length > 0 ? (
+              filteredConversations.map((conv) => (
                 <ConversationItem 
                   key={conv.id} 
                   conversation={conv} 
@@ -89,12 +123,59 @@ const MessagesPage: React.FC = () => {
               ))
             ) : (
               <div className="p-4 text-center text-muted-foreground">
-                <p>No conversations yet.</p>
-                <Button asChild variant="link" className="mt-2">
-                  <Link to="/browse">Find Users</Link>
-                </Button>
+                <p>No conversations {activeTab !== 'all' ? `in ${activeTab}` : ''} yet.</p>
+                {activeTab === 'all' && (
+                  <Button asChild variant="link" className="mt-2">
+                    <Link to="/browse">Find Users</Link>
+                  </Button>
+                )}
               </div>
             )}
+          </div>
+        </div>
+        
+        {/* Mobile Tabs */}
+        <div className="md:hidden w-full border-b">
+          <div className="p-4">
+            <h2 className="text-lg font-semibold">Messages</h2>
+            
+            <Tabs 
+              defaultValue="all" 
+              value={activeTab} 
+              onValueChange={setActiveTab}
+              className="mt-3"
+            >
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="received">Received</TabsTrigger>
+                <TabsTrigger value="sent">Sent</TabsTrigger>
+              </TabsList>
+              
+              {!otherUser && (
+                <TabsContent value={activeTab}>
+                  <div className="pt-2">
+                    {filteredConversations.length > 0 ? (
+                      filteredConversations.map((conv) => (
+                        <ConversationItem 
+                          key={conv.id} 
+                          conversation={conv} 
+                          isActive={userId ? conv.participantIds.includes(userId) : false} 
+                        />
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-muted-foreground">
+                        <p>No conversations {activeTab !== 'all' ? `in ${activeTab}` : ''} yet.</p>
+                        {activeTab === 'all' && (
+                          <Button asChild variant="link" className="mt-2">
+                            <Link to="/browse">Find Users</Link>
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+              )}
+            </Tabs>
           </div>
         </div>
         
