@@ -27,7 +27,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { User, Skill, ProficiencyLevel, LocationPreference } from '../types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Camera, Upload } from 'lucide-react';
+import { Camera, Upload, Phone } from 'lucide-react';
 import { uploadProfilePicture } from '../services/profileService';
 
 type FormValues = {
@@ -37,6 +37,7 @@ type FormValues = {
   location: string;
   locationPreference: LocationPreference;
   availability: string;
+  phone: string; // Add phone field
 };
 
 const EditProfile: React.FC = () => {
@@ -78,6 +79,7 @@ const EditProfile: React.FC = () => {
         location: currentUser.location || '',
         locationPreference: currentUser.locationPreference || 'both',
         availability: currentUser.availability || '',
+        phone: currentUser.phone || '',
       });
     }
   }, [currentUser]);
@@ -135,6 +137,7 @@ const EditProfile: React.FC = () => {
       location: currentUser?.location || '',
       locationPreference: currentUser?.locationPreference || 'both',
       availability: currentUser?.availability || '',
+      phone: currentUser?.phone || '',
     },
   });
   
@@ -297,6 +300,23 @@ const EditProfile: React.FC = () => {
                       <FormControl>
                         <Input {...field} type="email" />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem className="mb-4">
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="tel" placeholder="+1 (555) 123-4567" />
+                      </FormControl>
+                      <FormDescription>
+                        Add your phone number for additional contact options
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

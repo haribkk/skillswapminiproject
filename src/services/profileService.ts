@@ -16,6 +16,7 @@ export const updateUserProfile = async (user: User) => {
         location_preference: user.locationPreference,
         availability: user.availability,
         profile_picture: user.profilePicture,
+        phone: user.phone, // Add phone field
       } as any)
       .eq('id', user.id);
 
@@ -77,6 +78,20 @@ export const updateUserProfile = async (user: User) => {
 
 export const uploadProfilePicture = async (userId: string, file: File): Promise<string | null> => {
   try {
+    // Check if the profiles bucket exists
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const profilesBucket = buckets?.find(bucket => bucket.name === 'profiles');
+    
+    // Create bucket if it doesn't exist
+    if (!profilesBucket) {
+      toast({
+        title: "Setting up storage",
+        description: "Creating storage for profile pictures. Please try again in a moment.",
+      });
+      console.error("Profiles bucket not found. Please create it in the Supabase dashboard.");
+      return null;
+    }
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `${userId}/${fileName}`;
