@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, Conversation, SwapProposal, Message } from '../types';
 import { conversations as mockConversations, swapProposals as mockSwapProposals } from '../data/mockData';
@@ -18,6 +17,7 @@ interface AppContextType {
   getConversation: (userId: string, otherUserId: string) => Conversation | undefined;
   getUserById: (userId: string) => User | undefined;
   updateUserProfile: (updatedUser: User) => Promise<boolean>;
+  markConversationAsRead: (userId: string, otherUserId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,7 +31,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
   const [swapProposals, setSwapProposals] = useState<SwapProposal[]>(mockSwapProposals);
 
-  // Update current user when the profile or auth state changes
   useEffect(() => {
     if (currentUserProfile) {
       setCurrentUser(currentUserProfile);
@@ -39,6 +38,31 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setCurrentUser(null);
     }
   }, [currentUserProfile, user]);
+
+  const markConversationAsRead = (userId: string, otherUserId: string) => {
+    setConversations(prevConversations => {
+      return prevConversations.map(conv => {
+        if (
+          conv.participantIds.includes(userId) && 
+          conv.participantIds.includes(otherUserId)
+        ) {
+          const updatedMessages = conv.messages.map(message => {
+            if (message.receiverId === userId && !message.read) {
+              return { ...message, read: true };
+            }
+            return message;
+          });
+          
+          return {
+            ...conv,
+            messages: updatedMessages,
+            unreadCount: 0
+          };
+        }
+        return conv;
+      });
+    });
+  };
 
   const sendMessage = (messageData: Omit<Message, 'id' | 'timestamp' | 'read'>) => {
     const newMessage: Message = {
@@ -48,34 +72,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       read: false,
     };
 
-    // Find existing conversation or create a new one
     const conversationIndex = conversations.findIndex(
       (conv) => 
-        conv.participantIds.includes(messageData.senderId) && 
-        conv.participantIds.includes(messageData.receiverId)
+        (conv.participantIds.includes(messageData.senderId) && 
+        conv.participantIds.includes(messageData.receiverId))
     );
 
     if (conversationIndex >= 0) {
-      // Update existing conversation
       const updatedConversations = [...conversations];
       updatedConversations[conversationIndex] = {
         ...updatedConversations[conversationIndex],
         messages: [...updatedConversations[conversationIndex].messages, newMessage],
         lastMessageTimestamp: newMessage.timestamp,
-        unreadCount: updatedConversations[conversationIndex].unreadCount + 1,
+        unreadCount: messageData.receiverId === currentUser?.id 
+          ? updatedConversations[conversationIndex].unreadCount 
+          : updatedConversations[conversationIndex].unreadCount + 1,
       };
       setConversations(updatedConversations);
     } else {
-      // Create new conversation
       const newConversation: Conversation = {
         id: String(Date.now()),
         participantIds: [messageData.senderId, messageData.receiverId],
         lastMessageTimestamp: newMessage.timestamp,
-        unreadCount: 1,
+        unreadCount: messageData.receiverId === currentUser?.id ? 0 : 1,
         messages: [newMessage],
       };
-      setConversations([...conversations, newConversation]);
+      setConversations(prevConversations => [...prevConversations, newConversation]);
     }
+    
+    console.log("Message sent:", newMessage);
+    console.log("Current conversations:", conversations);
   };
 
   const createSwapProposal = (proposalData: Omit<SwapProposal, 'id' | 'createdAt' | 'status'>) => {
@@ -87,7 +113,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     };
     setSwapProposals([...swapProposals, newProposal]);
 
-    // Also send a message about the proposal
     sendMessage({
       senderId: proposalData.proposerId,
       receiverId: proposalData.recipientId,
@@ -101,7 +126,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     );
     setSwapProposals(updatedProposals);
 
-    // Send a message about the status update
     const proposal = swapProposals.find(p => p.id === proposalId);
     if (proposal && currentUser) {
       const otherUserId = currentUser.id === proposal.proposerId 
@@ -128,11 +152,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const getConversation = (userId: string, otherUserId: string) => {
-    return conversations.find(
+    const conversation = conversations.find(
       (conv) => 
         conv.participantIds.includes(userId) && 
         conv.participantIds.includes(otherUserId)
     );
+    
+    if (!conversation) {
+      console.log("No conversation found between", userId, "and", otherUserId);
+      console.log("Available conversations:", conversations);
+    }
+    
+    return conversation;
   };
 
   const getUserById = (userId: string) => {
@@ -161,6 +192,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         getConversation,
         getUserById,
         updateUserProfile,
+        markConversationAsRead,
       }}
     >
       {children}
