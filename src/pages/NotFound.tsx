@@ -1,9 +1,14 @@
 
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 
 const NotFound = () => {
   const location = useLocation();
+  
+  // If someone tries to access /login, redirect them to the proper auth page
+  if (location.pathname === "/login") {
+    return <Navigate to="/auth" replace />;
+  }
 
   useEffect(() => {
     console.error(
