@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -26,9 +27,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from '@/components/ui/use-toast';
 import { User, Skill, ProficiencyLevel, LocationPreference } from '../types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Camera, Upload, Phone } from 'lucide-react';
+import { Camera, Upload, Phone, Instagram, Facebook } from 'lucide-react';
 import { uploadProfilePicture } from '../services/profileService';
 import { getInitials } from '@/utils/userUtils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type FormValues = {
   name: string;
@@ -38,12 +40,17 @@ type FormValues = {
   locationPreference: LocationPreference;
   availability: string;
   phone: string;
+  instagram: string;
+  facebook: string;
+  whatsapp: string;
+  other: string;
 };
 
 const EditProfile: React.FC = () => {
   const { currentUser, updateUserProfile } = useApp();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   
   const [teachableSkills, setTeachableSkills] = useState<Skill[]>(
     currentUser?.teachableSkills || []
@@ -78,6 +85,10 @@ const EditProfile: React.FC = () => {
         locationPreference: currentUser.locationPreference || 'both',
         availability: currentUser.availability || '',
         phone: currentUser.phone || '',
+        instagram: currentUser.socialLinks?.instagram || '',
+        facebook: currentUser.socialLinks?.facebook || '',
+        whatsapp: currentUser.socialLinks?.whatsapp || '',
+        other: currentUser.socialLinks?.other || '',
       });
     }
   }, [currentUser]);
@@ -124,6 +135,10 @@ const EditProfile: React.FC = () => {
       locationPreference: currentUser?.locationPreference || 'both',
       availability: currentUser?.availability || '',
       phone: currentUser?.phone || '',
+      instagram: currentUser?.socialLinks?.instagram || '',
+      facebook: currentUser?.socialLinks?.facebook || '',
+      whatsapp: currentUser?.socialLinks?.whatsapp || '',
+      other: currentUser?.socialLinks?.other || '',
     },
   });
   
@@ -182,12 +197,20 @@ const EditProfile: React.FC = () => {
     setIsSubmitting(true);
     
     try {
+      const { instagram, facebook, whatsapp, other, ...restData } = data;
+      
       const updatedUser: User = {
         ...currentUser,
-        ...data,
+        ...restData,
         teachableSkills,
         desiredSkills,
         profilePicture,
+        socialLinks: {
+          instagram,
+          facebook,
+          whatsapp,
+          other
+        }
       };
       
       const success = await updateUserProfile(updatedUser);
@@ -393,6 +416,78 @@ const EditProfile: React.FC = () => {
             </Card>
           </div>
           
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-xl font-semibold mb-4">Social Media & Contact Links</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="instagram"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Instagram size={16} />
+                        Instagram
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="@username or full URL" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="facebook"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Facebook size={16} />
+                        Facebook
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Username or full URL" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="whatsapp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        <Phone size={16} />
+                        WhatsApp
+                      </FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Phone number with country code" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="other"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Other Platform</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Website, LinkedIn, etc." />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card>
               <CardContent className="pt-6">
@@ -416,7 +511,7 @@ const EditProfile: React.FC = () => {
                   ))}
                 </div>
                 
-                <div className="flex space-x-2 mb-2">
+                <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-2">
                   <Input
                     value={newTeachableSkill}
                     onChange={(e) => setNewTeachableSkill(e.target.value)}
@@ -429,7 +524,7 @@ const EditProfile: React.FC = () => {
                       setNewTeachableSkillProficiency(value)
                     }
                   >
-                    <SelectTrigger className="w-[140px]">
+                    <SelectTrigger className="w-full md:w-[140px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -445,6 +540,7 @@ const EditProfile: React.FC = () => {
                   variant="outline" 
                   onClick={addTeachableSkill}
                   disabled={!newTeachableSkill.trim()}
+                  className="w-full md:w-auto"
                 >
                   Add Skill
                 </Button>
@@ -487,6 +583,7 @@ const EditProfile: React.FC = () => {
                   variant="outline" 
                   onClick={addDesiredSkill}
                   disabled={!newDesiredSkill.trim()}
+                  className="w-full md:w-auto"
                 >
                   Add Skill
                 </Button>
@@ -494,15 +591,16 @@ const EditProfile: React.FC = () => {
             </Card>
           </div>
           
-          <div className="flex justify-end space-x-4">
+          <div className="flex flex-col md:flex-row justify-end space-y-4 md:space-y-0 md:space-x-4">
             <Button 
               type="button" 
               variant="outline" 
               onClick={() => navigate('/profile')}
+              className="w-full md:w-auto"
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button type="submit" disabled={isSubmitting} className="w-full md:w-auto">
               {isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </div>

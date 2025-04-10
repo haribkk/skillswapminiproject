@@ -16,7 +16,8 @@ export const updateUserProfile = async (user: User) => {
         location_preference: user.locationPreference,
         availability: user.availability,
         profile_picture: user.profilePicture,
-        phone: user.phone, // Add phone field
+        phone: user.phone,
+        social_links: user.socialLinks
       } as any)
       .eq('id', user.id);
 

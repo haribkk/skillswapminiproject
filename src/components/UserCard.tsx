@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User } from '../types';
 import SkillBadge from './SkillBadge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Star } from 'lucide-react';
+import { MessageSquare, Star, Phone, Instagram, Facebook } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/userUtils';
 
@@ -37,6 +38,41 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
               ? 'In-person & Online' 
               : user.locationPreference.charAt(0).toUpperCase() + user.locationPreference.slice(1)}
           </div>
+          
+          {/* Social/Contact Links */}
+          {(user.phone || user.socialLinks) && (
+            <div className="flex gap-2 mt-2">
+              {user.phone && (
+                <a href={`tel:${user.phone}`} aria-label="Call">
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                    <Phone size={14} />
+                  </Button>
+                </a>
+              )}
+              
+              {user.socialLinks?.instagram && (
+                <a href={user.socialLinks.instagram.startsWith('http') ? user.socialLinks.instagram : `https://instagram.com/${user.socialLinks.instagram.replace('@', '')}`} 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   aria-label="Instagram">
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                    <Instagram size={14} />
+                  </Button>
+                </a>
+              )}
+              
+              {user.socialLinks?.facebook && (
+                <a href={user.socialLinks.facebook.startsWith('http') ? user.socialLinks.facebook : `https://facebook.com/${user.socialLinks.facebook}`} 
+                   target="_blank" 
+                   rel="noopener noreferrer"
+                   aria-label="Facebook">
+                  <Button variant="outline" size="icon" className="h-8 w-8">
+                    <Facebook size={14} />
+                  </Button>
+                </a>
+              )}
+            </div>
+          )}
         </div>
         
         <div className="mb-4">

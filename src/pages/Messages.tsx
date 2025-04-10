@@ -9,15 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Send, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const MessagesPage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const navigate = useNavigate();
-  const { currentUser, users, conversations, sendMessage, getConversation } = useApp();
+  const { currentUser, users, conversations, sendMessage, getConversation, markConversationAsRead } = useApp();
   
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState('all');
+  const isMobile = useIsMobile();
   
   // Get other user if userId is provided
   const otherUser = userId ? users.find(user => user.id === userId) : undefined;
@@ -45,7 +47,14 @@ const MessagesPage: React.FC = () => {
     return true;
   });
   
-  // Scroll to bottom of messages when conversation changes
+  // Mark messages as read when conversation viewed
+  useEffect(() => {
+    if (userId && currentUser && conversation) {
+      markConversationAsRead(currentUser.id, userId);
+    }
+  }, [userId, currentUser, conversation]);
+  
+  // Scroll to bottom of messages when conversation changes or new message added
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversation]);
@@ -65,16 +74,16 @@ const MessagesPage: React.FC = () => {
     setMessageText('');
   };
   
-  // If no user is selected and there are conversations, navigate to the first one
+  // If no user is selected and there are conversations, navigate to the first one on desktop
   useEffect(() => {
-    if (!userId && conversations.length > 0 && currentUser) {
+    if (!userId && conversations.length > 0 && currentUser && !isMobile) {
       const firstConv = conversations[0];
       const otherParticipantId = firstConv.participantIds.find(id => id !== currentUser.id);
       if (otherParticipantId) {
         navigate(`/messages/${otherParticipantId}`);
       }
     }
-  }, [userId, conversations, currentUser, navigate]);
+  }, [userId, conversations, currentUser, navigate, isMobile]);
   
   if (!currentUser) {
     return (
@@ -84,179 +93,151 @@ const MessagesPage: React.FC = () => {
           You need to sign in to access messages.
         </p>
         <Button asChild>
-          <Link to="/login">Sign In</Link>
+          <Link to="/auth">Sign In</Link>
         </Button>
       </div>
     );
   }
   
+  // Mobile view shows either conversation list or messages
+  const showConversationList = isMobile && !userId;
+  const showMessages = !isMobile || (isMobile && userId);
+  
   return (
-    <div className="container mx-auto p-0 flex flex-col h-[calc(100vh-64px-150px)]">
+    <div className="container mx-auto p-0 flex flex-col h-[calc(100vh-64px-150px)] min-h-[500px]">
       <div className="flex flex-grow overflow-hidden">
-        {/* Conversations Sidebar */}
-        <div className="w-full md:w-72 bg-card border-r hidden md:block overflow-y-auto">
-          <div className="p-4 border-b">
-            <h2 className="text-lg font-semibold">Messages</h2>
+        {/* Conversations Sidebar - Always visible on desktop, conditionally on mobile */}
+        {(!isMobile || showConversationList) && (
+          <div className={`${isMobile ? 'w-full' : 'w-72'} bg-card border-r overflow-y-auto`}>
+            <div className="p-4 border-b">
+              <h2 className="text-lg font-semibold">Messages</h2>
+              
+              <Tabs 
+                defaultValue="all" 
+                value={activeTab} 
+                onValueChange={setActiveTab}
+                className="mt-3"
+              >
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="all">All</TabsTrigger>
+                  <TabsTrigger value="received">Received</TabsTrigger>
+                  <TabsTrigger value="sent">Sent</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
             
-            <Tabs 
-              defaultValue="all" 
-              value={activeTab} 
-              onValueChange={setActiveTab}
-              className="mt-3"
-            >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="received">Received</TabsTrigger>
-                <TabsTrigger value="sent">Sent</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div>
+              {filteredConversations.length > 0 ? (
+                filteredConversations.map((conv) => (
+                  <ConversationItem 
+                    key={conv.id} 
+                    conversation={conv} 
+                    isActive={userId ? conv.participantIds.includes(userId) : false} 
+                  />
+                ))
+              ) : (
+                <div className="p-4 text-center text-muted-foreground">
+                  <p>No conversations {activeTab !== 'all' ? `in ${activeTab}` : ''} yet.</p>
+                  {activeTab === 'all' && (
+                    <Button asChild variant="link" className="mt-2">
+                      <Link to="/browse">Find Users</Link>
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
-          
-          <div>
-            {filteredConversations.length > 0 ? (
-              filteredConversations.map((conv) => (
-                <ConversationItem 
-                  key={conv.id} 
-                  conversation={conv} 
-                  isActive={userId ? conv.participantIds.includes(userId) : false} 
-                />
-              ))
+        )}
+        
+        {/* Message Content - Always visible on desktop, conditionally on mobile */}
+        {showMessages && (
+          <div className="flex-grow flex flex-col overflow-hidden">
+            {otherUser ? (
+              <>
+                {/* Message Header */}
+                <div className="p-4 border-b flex items-center">
+                  {isMobile && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="mr-2"
+                      onClick={() => navigate('/messages')}
+                    >
+                      <ArrowLeft size={20} />
+                    </Button>
+                  )}
+                  
+                  <Link to={`/profile/${otherUser.id}`} className="flex items-center">
+                    <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
+                      <img 
+                        src={otherUser.profilePicture} 
+                        alt={otherUser.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                      <div className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground text-lg font-medium">
+                        {otherUser.name ? otherUser.name.charAt(0).toUpperCase() : '?'}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{otherUser.name}</h3>
+                      <p className="text-xs text-muted-foreground">{otherUser.location}</p>
+                    </div>
+                  </Link>
+                </div>
+                
+                {/* Messages */}
+                <div className="flex-grow p-4 overflow-y-auto">
+                  {conversation && conversation.messages.length > 0 ? (
+                    conversation.messages.map((message) => (
+                      <MessageBubble key={message.id} message={message} />
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <p className="text-muted-foreground mb-2">No messages yet.</p>
+                        <p className="text-sm text-muted-foreground">
+                          Send a message to start the conversation.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+                
+                {/* Message Input */}
+                <div className="p-4 border-t">
+                  <form onSubmit={handleSendMessage} className="flex">
+                    <Input
+                      placeholder="Type your message..."
+                      value={messageText}
+                      onChange={(e) => setMessageText(e.target.value)}
+                      className="mr-2"
+                    />
+                    <Button type="submit" disabled={!messageText.trim()}>
+                      <Send size={18} />
+                    </Button>
+                  </form>
+                </div>
+              </>
             ) : (
-              <div className="p-4 text-center text-muted-foreground">
-                <p>No conversations {activeTab !== 'all' ? `in ${activeTab}` : ''} yet.</p>
-                {activeTab === 'all' && (
-                  <Button asChild variant="link" className="mt-2">
-                    <Link to="/browse">Find Users</Link>
+              <div className="flex-grow flex items-center justify-center">
+                <div className="text-center p-4">
+                  <h2 className="text-xl font-medium mb-2">Select a Conversation</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Choose a conversation from the sidebar or start a new one.
+                  </p>
+                  <Button asChild>
+                    <Link to="/browse">Browse Users</Link>
                   </Button>
-                )}
+                </div>
               </div>
             )}
           </div>
-        </div>
-        
-        {/* Mobile Tabs */}
-        <div className="md:hidden w-full border-b">
-          <div className="p-4">
-            <h2 className="text-lg font-semibold">Messages</h2>
-            
-            <Tabs 
-              defaultValue="all" 
-              value={activeTab} 
-              onValueChange={setActiveTab}
-              className="mt-3"
-            >
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="received">Received</TabsTrigger>
-                <TabsTrigger value="sent">Sent</TabsTrigger>
-              </TabsList>
-              
-              {!otherUser && (
-                <TabsContent value={activeTab}>
-                  <div className="pt-2">
-                    {filteredConversations.length > 0 ? (
-                      filteredConversations.map((conv) => (
-                        <ConversationItem 
-                          key={conv.id} 
-                          conversation={conv} 
-                          isActive={userId ? conv.participantIds.includes(userId) : false} 
-                        />
-                      ))
-                    ) : (
-                      <div className="p-4 text-center text-muted-foreground">
-                        <p>No conversations {activeTab !== 'all' ? `in ${activeTab}` : ''} yet.</p>
-                        {activeTab === 'all' && (
-                          <Button asChild variant="link" className="mt-2">
-                            <Link to="/browse">Find Users</Link>
-                          </Button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </TabsContent>
-              )}
-            </Tabs>
-          </div>
-        </div>
-        
-        {/* Message Content */}
-        <div className="flex-grow flex flex-col overflow-hidden">
-          {otherUser ? (
-            <>
-              {/* Message Header */}
-              <div className="p-4 border-b flex items-center">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="md:hidden mr-2"
-                  onClick={() => navigate('/messages')}
-                >
-                  <ArrowLeft size={20} />
-                </Button>
-                
-                <Link to={`/profile/${otherUser.id}`} className="flex items-center">
-                  <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-                    <img 
-                      src={otherUser.profilePicture} 
-                      alt={otherUser.name} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div>
-                    <h3 className="font-medium">{otherUser.name}</h3>
-                    <p className="text-xs text-muted-foreground">{otherUser.location}</p>
-                  </div>
-                </Link>
-              </div>
-              
-              {/* Messages */}
-              <div className="flex-grow p-4 overflow-y-auto">
-                {conversation && conversation.messages.length > 0 ? (
-                  conversation.messages.map((message) => (
-                    <MessageBubble key={message.id} message={message} />
-                  ))
-                ) : (
-                  <div className="flex items-center justify-center h-full">
-                    <div className="text-center">
-                      <p className="text-muted-foreground mb-2">No messages yet.</p>
-                      <p className="text-sm text-muted-foreground">
-                        Send a message to start the conversation.
-                      </p>
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-              
-              {/* Message Input */}
-              <div className="p-4 border-t">
-                <form onSubmit={handleSendMessage} className="flex">
-                  <Input
-                    placeholder="Type your message..."
-                    value={messageText}
-                    onChange={(e) => setMessageText(e.target.value)}
-                    className="mr-2"
-                  />
-                  <Button type="submit" disabled={!messageText.trim()}>
-                    <Send size={18} />
-                  </Button>
-                </form>
-              </div>
-            </>
-          ) : (
-            <div className="flex-grow flex items-center justify-center">
-              <div className="text-center">
-                <h2 className="text-xl font-medium mb-2">Select a Conversation</h2>
-                <p className="text-muted-foreground mb-6">
-                  Choose a conversation from the sidebar or start a new one.
-                </p>
-                <Button asChild>
-                  <Link to="/browse">Browse Users</Link>
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
