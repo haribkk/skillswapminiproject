@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -7,18 +6,18 @@ import SwapProposalCard from '../components/SwapProposalCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Calendar, MapPin, Star, Clock, Edit } from 'lucide-react';
+import { MessageSquare, Calendar, MapPin, Star, Clock, Edit, Phone } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getInitials } from '@/utils/userUtils';
 
 const ProfilePage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const { currentUser, users, swapProposals } = useApp();
   
-  // If no userId is provided, show current user's profile
   const user = userId 
     ? users.find(u => u.id === userId) 
     : currentUser;
   
-  // Get swap proposals related to this user
   const userSwapProposals = swapProposals.filter(
     proposal => proposal.proposerId === user?.id || proposal.recipientId === user?.id
   );
@@ -42,19 +41,22 @@ const ProfilePage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column - User Info */}
         <div className="lg:col-span-1">
           <Card>
             <CardContent className="pt-6">
               <div className="flex flex-col items-center mb-6">
                 <div className="w-32 h-32 rounded-full overflow-hidden mb-4">
-                  <img 
-                    src={user.profilePicture} 
-                    alt={user.name} 
-                    className="w-full h-full object-cover"
-                  />
+                  <Avatar className="w-full h-full">
+                    <AvatarImage 
+                      src={user.profilePicture} 
+                      alt={user.name} 
+                      className="w-full h-full object-cover"
+                    />
+                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                  </Avatar>
                 </div>
                 <h1 className="text-2xl font-bold mb-1">{user.name}</h1>
+                
                 <div className="flex items-center text-yellow-500 mb-2">
                   <Star size={18} className="fill-current" />
                   <span className="ml-1">{user.rating.toFixed(1)} ({user.completedSwaps} swaps)</span>
@@ -85,6 +87,13 @@ const ProfilePage: React.FC = () => {
                     </Link>
                   </Button>
                 )}
+                
+                {user.phone && (
+                  <div className="flex items-center text-muted-foreground mb-2">
+                    <Phone size={16} className="mr-1" />
+                    <span>{user.phone}</span>
+                  </div>
+                )}
               </div>
               
               <div className="mb-6">
@@ -112,7 +121,6 @@ const ProfilePage: React.FC = () => {
           </Card>
         </div>
         
-        {/* Right Column - Skills & Proposals */}
         <div className="lg:col-span-2">
           <Tabs defaultValue="skills">
             <TabsList className="grid w-full grid-cols-2 mb-6">

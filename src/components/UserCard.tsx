@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User } from '../types';
@@ -7,21 +6,13 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Star } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getInitials } from '@/utils/userUtils';
 
 interface UserCardProps {
   user: User;
 }
 
 const UserCard: React.FC<UserCardProps> = ({ user }) => {
-  // Get initials for avatar fallback
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-  };
-
   return (
     <Card className="h-full flex flex-col">
       <CardContent className="pt-6 flex-grow">

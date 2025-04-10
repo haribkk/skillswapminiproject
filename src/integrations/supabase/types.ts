@@ -49,6 +49,7 @@ export type Database = {
           location: string | null
           location_preference: string | null
           name: string
+          phone: string | null
           profile_picture: string | null
           rating: number | null
         }
@@ -62,6 +63,7 @@ export type Database = {
           location?: string | null
           location_preference?: string | null
           name: string
+          phone?: string | null
           profile_picture?: string | null
           rating?: number | null
         }
@@ -75,6 +77,7 @@ export type Database = {
           location?: string | null
           location_preference?: string | null
           name?: string
+          phone?: string | null
           profile_picture?: string | null
           rating?: number | null
         }

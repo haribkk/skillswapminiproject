@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -29,6 +28,7 @@ import { User, Skill, ProficiencyLevel, LocationPreference } from '../types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Camera, Upload, Phone } from 'lucide-react';
 import { uploadProfilePicture } from '../services/profileService';
+import { getInitials } from '@/utils/userUtils';
 
 type FormValues = {
   name: string;
@@ -37,7 +37,7 @@ type FormValues = {
   location: string;
   locationPreference: LocationPreference;
   availability: string;
-  phone: string; // Add phone field
+  phone: string;
 };
 
 const EditProfile: React.FC = () => {
@@ -59,13 +59,11 @@ const EditProfile: React.FC = () => {
   const [newDesiredSkill, setNewDesiredSkill] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Add state for profile picture
   const [profilePicture, setProfilePicture] = useState<string>(
     currentUser?.profilePicture || ''
   );
   const [isUploading, setIsUploading] = useState(false);
 
-  // Reset form when currentUser changes
   useEffect(() => {
     if (currentUser) {
       setTeachableSkills(currentUser.teachableSkills || []);
@@ -84,14 +82,12 @@ const EditProfile: React.FC = () => {
     }
   }, [currentUser]);
 
-  // Handle profile picture change
   const handleProfilePictureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && user) {
       setIsUploading(true);
       
       try {
-        // Show temporary preview
         const reader = new FileReader();
         reader.onloadend = () => {
           const result = reader.result as string;
@@ -99,7 +95,6 @@ const EditProfile: React.FC = () => {
         };
         reader.readAsDataURL(file);
         
-        // Upload to Supabase
         const uploadedUrl = await uploadProfilePicture(user.id, file);
         if (uploadedUrl) {
           setProfilePicture(uploadedUrl);
@@ -120,15 +115,6 @@ const EditProfile: React.FC = () => {
     }
   };
 
-  // Get initials for avatar fallback
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-  };
-  
   const form = useForm<FormValues>({
     defaultValues: {
       name: currentUser?.name || '',
@@ -196,7 +182,6 @@ const EditProfile: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Create updated user object
       const updatedUser: User = {
         ...currentUser,
         ...data,
@@ -205,7 +190,6 @@ const EditProfile: React.FC = () => {
         profilePicture,
       };
       
-      // Update user profile
       const success = await updateUserProfile(updatedUser);
       
       if (success) {
@@ -214,7 +198,6 @@ const EditProfile: React.FC = () => {
           description: "Your profile has been successfully updated.",
         });
         
-        // Navigate back to profile page
         navigate('/profile');
       }
     } catch (error) {
@@ -230,7 +213,6 @@ const EditProfile: React.FC = () => {
       
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {/* Profile Photo Upload */}
           <Card>
             <CardContent className="pt-6">
               <h2 className="text-xl font-semibold mb-4">Profile Photo</h2>
@@ -272,7 +254,6 @@ const EditProfile: React.FC = () => {
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Personal Information */}
             <Card>
               <CardContent className="pt-6">
                 <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
@@ -345,7 +326,6 @@ const EditProfile: React.FC = () => {
               </CardContent>
             </Card>
             
-            {/* Location & Availability */}
             <Card>
               <CardContent className="pt-6">
                 <h2 className="text-xl font-semibold mb-4">Location & Availability</h2>
@@ -414,7 +394,6 @@ const EditProfile: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Teachable Skills */}
             <Card>
               <CardContent className="pt-6">
                 <h2 className="text-xl font-semibold mb-4">Skills I Can Teach</h2>
@@ -472,7 +451,6 @@ const EditProfile: React.FC = () => {
               </CardContent>
             </Card>
             
-            {/* Desired Skills */}
             <Card>
               <CardContent className="pt-6">
                 <h2 className="text-xl font-semibold mb-4">Skills I Want to Learn</h2>

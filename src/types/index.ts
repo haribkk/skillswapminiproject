@@ -1,4 +1,3 @@
-
 export type ProficiencyLevel = 'beginner' | 'intermediate' | 'expert';
 export type LocationPreference = 'in-person' | 'online' | 'both';
 
@@ -22,6 +21,7 @@ export interface User {
   joinedDate: string;
   rating: number;
   completedSwaps: number;
+  phone?: string;
 }
 
 export interface Message {
