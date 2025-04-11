@@ -29,6 +29,8 @@ const mapProfileToUser = (profile: UserWithSkills): User => {
     joinedDate: profile.joined_date || new Date().toISOString(),
     rating: profile.rating || 5.0,
     completedSwaps: profile.completed_swaps || 0,
+    phone: profile.phone || undefined,
+    socialLinks: profile.social_links || undefined,
   };
 };
 

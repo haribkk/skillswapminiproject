@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -6,7 +7,7 @@ import SwapProposalCard from '../components/SwapProposalCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Calendar, MapPin, Star, Clock, Edit, Phone } from 'lucide-react';
+import { MessageSquare, Calendar, MapPin, Star, Clock, Edit, Phone, Instagram, Facebook, ExternalLink } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/userUtils';
 
@@ -71,7 +72,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 
                 {!isCurrentUser && (
-                  <Button asChild className="w-full">
+                  <Button asChild className="w-full mb-3">
                     <Link to={`/messages/${user.id}`}>
                       <MessageSquare size={16} className="mr-2" />
                       Message
@@ -80,7 +81,7 @@ const ProfilePage: React.FC = () => {
                 )}
                 
                 {isCurrentUser && (
-                  <Button asChild variant="outline" className="w-full">
+                  <Button asChild variant="outline" className="w-full mb-3">
                     <Link to="/profile/edit">
                       <Edit size={16} className="mr-2" />
                       Edit Profile
@@ -88,10 +89,77 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 )}
                 
-                {user.phone && (
-                  <div className="flex items-center text-muted-foreground mb-2">
-                    <Phone size={16} className="mr-1" />
-                    <span>{user.phone}</span>
+                {/* Contact Information Section */}
+                {(user.phone || user.socialLinks) && (
+                  <div className="w-full border-t pt-4 mt-2">
+                    <h2 className="text-lg font-medium mb-3">Contact</h2>
+                    
+                    {user.phone && (
+                      <div className="flex items-center text-muted-foreground mb-2">
+                        <Phone size={16} className="mr-2 flex-shrink-0" />
+                        <a href={`tel:${user.phone}`} className="hover:underline">{user.phone}</a>
+                      </div>
+                    )}
+                    
+                    {user.socialLinks?.instagram && (
+                      <div className="flex items-center text-muted-foreground mb-2">
+                        <Instagram size={16} className="mr-2 flex-shrink-0" />
+                        <a 
+                          href={user.socialLinks.instagram.startsWith('http') ? user.socialLinks.instagram : `https://instagram.com/${user.socialLinks.instagram.replace('@', '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline truncate"
+                        >
+                          {user.socialLinks.instagram.startsWith('http') 
+                            ? 'Instagram Profile' 
+                            : '@' + user.socialLinks.instagram.replace('@', '')}
+                        </a>
+                      </div>
+                    )}
+                    
+                    {user.socialLinks?.facebook && (
+                      <div className="flex items-center text-muted-foreground mb-2">
+                        <Facebook size={16} className="mr-2 flex-shrink-0" />
+                        <a 
+                          href={user.socialLinks.facebook.startsWith('http') ? user.socialLinks.facebook : `https://facebook.com/${user.socialLinks.facebook}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline truncate"
+                        >
+                          {user.socialLinks.facebook.startsWith('http') 
+                            ? 'Facebook Profile' 
+                            : user.socialLinks.facebook}
+                        </a>
+                      </div>
+                    )}
+                    
+                    {user.socialLinks?.whatsapp && (
+                      <div className="flex items-center text-muted-foreground mb-2">
+                        <Phone size={16} className="mr-2 flex-shrink-0" />
+                        <a 
+                          href={`https://wa.me/${user.socialLinks.whatsapp.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline"
+                        >
+                          WhatsApp: {user.socialLinks.whatsapp}
+                        </a>
+                      </div>
+                    )}
+                    
+                    {user.socialLinks?.other && (
+                      <div className="flex items-center text-muted-foreground mb-2">
+                        <ExternalLink size={16} className="mr-2 flex-shrink-0" />
+                        <a 
+                          href={user.socialLinks.other.startsWith('http') ? user.socialLinks.other : `https://${user.socialLinks.other}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline truncate"
+                        >
+                          {user.socialLinks.other}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
