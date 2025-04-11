@@ -52,6 +52,7 @@ export type Database = {
           phone: string | null
           profile_picture: string | null
           rating: number | null
+          social_links: Json | null
         }
         Insert: {
           availability?: string | null
@@ -66,6 +67,7 @@ export type Database = {
           phone?: string | null
           profile_picture?: string | null
           rating?: number | null
+          social_links?: Json | null
         }
         Update: {
           availability?: string | null
@@ -80,6 +82,7 @@ export type Database = {
           phone?: string | null
           profile_picture?: string | null
           rating?: number | null
+          social_links?: Json | null
         }
         Relationships: []
       }
