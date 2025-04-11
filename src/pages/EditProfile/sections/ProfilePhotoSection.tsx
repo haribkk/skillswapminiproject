@@ -65,7 +65,7 @@ const ProfilePhotoSection: React.FC<ProfilePhotoSectionProps> = ({
           <div className="relative w-32 h-32 mb-4">
             <Avatar className="w-full h-full">
               <AvatarImage src={profilePicture} />
-              <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name) : 'U'}</AvatarFallback>
+              <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name, true) : 'U'}</AvatarFallback>
             </Avatar>
             <label 
               htmlFor="profile-photo-upload" 

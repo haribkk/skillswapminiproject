@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -13,19 +12,11 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { getInitials } from '@/utils/userUtils';
 
 const Header: React.FC = () => {
   const { currentUser } = useApp();
   const { user, signOut } = useAuth();
-
-  // Get initials for avatar fallback
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase();
-  };
 
   return (
     <header className="bg-white shadow-sm">
@@ -52,7 +43,7 @@ const Header: React.FC = () => {
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={currentUser?.profilePicture} alt={currentUser?.name || user.email} />
-                      <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name) : user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name, true) : user.email?.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>

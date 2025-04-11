@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { User } from '../types';
@@ -25,7 +24,7 @@ const UserCard: React.FC<UserCardProps> = ({ user }) => {
                 alt={user.name} 
                 className="w-full h-full object-cover"
               />
-              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+              <AvatarFallback>{getInitials(user.name, true)}</AvatarFallback>
             </Avatar>
           </div>
           <h3 className="text-lg font-semibold text-center">{user.name}</h3>

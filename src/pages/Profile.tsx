@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -53,7 +52,7 @@ const ProfilePage: React.FC = () => {
                       alt={user.name} 
                       className="w-full h-full object-cover"
                     />
-                    <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                    <AvatarFallback>{getInitials(user.name, true)}</AvatarFallback>
                   </Avatar>
                 </div>
                 <h1 className="text-2xl font-bold mb-1">{user.name}</h1>
@@ -89,7 +88,6 @@ const ProfilePage: React.FC = () => {
                   </Button>
                 )}
                 
-                {/* Contact Information Section */}
                 {(user.phone || user.socialLinks) && (
                   <div className="w-full border-t pt-4 mt-2">
                     <h2 className="text-lg font-medium mb-3">Contact</h2>
