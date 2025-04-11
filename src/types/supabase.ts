@@ -10,5 +10,4 @@ export type DesiredSkill = Database['public']['Tables']['desired_skills']['Row']
 export interface UserWithSkills extends Profile {
   teachable_skills: TeachableSkill[];
   desired_skills: DesiredSkill[];
-  social_links?: Database['public']['Tables']['profiles']['Row']['social_links'];
 }
