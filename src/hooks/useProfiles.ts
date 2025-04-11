@@ -6,6 +6,24 @@ import { UserWithSkills } from '@/types/supabase';
 import { toast } from '@/components/ui/use-toast';
 import { User } from '@/types';
 
+// Helper function to safely type-cast social_links from Json to our expected structure
+const parseSocialLinks = (socialLinks: any): User['socialLinks'] | undefined => {
+  if (!socialLinks) return undefined;
+  
+  // If it's not an object, return undefined
+  if (typeof socialLinks !== 'object' || Array.isArray(socialLinks)) {
+    return undefined;
+  }
+
+  // Create a properly typed object with only our expected properties
+  return {
+    instagram: typeof socialLinks.instagram === 'string' ? socialLinks.instagram : undefined,
+    facebook: typeof socialLinks.facebook === 'string' ? socialLinks.facebook : undefined,
+    whatsapp: typeof socialLinks.whatsapp === 'string' ? socialLinks.whatsapp : undefined,
+    other: typeof socialLinks.other === 'string' ? socialLinks.other : undefined,
+  };
+};
+
 // Convert Supabase profile to our app's User type
 const mapProfileToUser = (profile: UserWithSkills): User => {
   return {
@@ -30,7 +48,7 @@ const mapProfileToUser = (profile: UserWithSkills): User => {
     rating: profile.rating || 5.0,
     completedSwaps: profile.completed_swaps || 0,
     phone: profile.phone || undefined,
-    socialLinks: profile.social_links || undefined,
+    socialLinks: parseSocialLinks(profile.social_links),
   };
 };
 
