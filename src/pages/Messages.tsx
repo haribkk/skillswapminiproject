@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -10,6 +9,7 @@ import { Send, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const MessagesPage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
@@ -21,15 +21,12 @@ const MessagesPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
   const isMobile = useIsMobile();
   
-  // Get other user if userId is provided
   const otherUser = userId ? users.find(user => user.id === userId) : undefined;
   
-  // Get conversation if it exists
   const conversation = userId && currentUser 
     ? getConversation(currentUser.id, userId)
     : undefined;
   
-  // Filter conversations based on active tab
   const filteredConversations = conversations.filter(conv => {
     if (!currentUser) return false;
     
@@ -47,19 +44,16 @@ const MessagesPage: React.FC = () => {
     return true;
   });
   
-  // Mark messages as read when conversation viewed
   useEffect(() => {
     if (userId && currentUser && conversation) {
       markConversationAsRead(currentUser.id, userId);
     }
   }, [userId, currentUser, conversation]);
   
-  // Scroll to bottom of messages when conversation changes or new message added
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversation]);
   
-  // Handle sending a message
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -74,7 +68,6 @@ const MessagesPage: React.FC = () => {
     setMessageText('');
   };
   
-  // If no user is selected and there are conversations, navigate to the first one on desktop
   useEffect(() => {
     if (!userId && conversations.length > 0 && currentUser && !isMobile) {
       const firstConv = conversations[0];
@@ -99,16 +92,14 @@ const MessagesPage: React.FC = () => {
     );
   }
   
-  // Mobile view shows either conversation list or messages
   const showConversationList = isMobile && !userId;
   const showMessages = !isMobile || (isMobile && userId);
   
   return (
     <div className="container mx-auto p-0 flex flex-col h-[calc(100vh-64px-150px)] min-h-[500px]">
       <div className="flex flex-grow overflow-hidden">
-        {/* Conversations Sidebar - Always visible on desktop, conditionally on mobile */}
         {(!isMobile || showConversationList) && (
-          <div className={`${isMobile ? 'w-full' : 'w-72'} bg-card border-r overflow-y-auto`}>
+          <div className={`${isMobile ? 'w-full' : 'w-72'} bg-card border-r h-full`}>
             <div className="p-4 border-b">
               <h2 className="text-lg font-semibold">Messages</h2>
               
@@ -126,7 +117,7 @@ const MessagesPage: React.FC = () => {
               </Tabs>
             </div>
             
-            <div>
+            <ScrollArea className="h-[calc(100%-85px)]">
               {filteredConversations.length > 0 ? (
                 filteredConversations.map((conv) => (
                   <ConversationItem 
@@ -145,16 +136,14 @@ const MessagesPage: React.FC = () => {
                   )}
                 </div>
               )}
-            </div>
+            </ScrollArea>
           </div>
         )}
         
-        {/* Message Content - Always visible on desktop, conditionally on mobile */}
         {showMessages && (
           <div className="flex-grow flex flex-col overflow-hidden">
             {otherUser ? (
               <>
-                {/* Message Header */}
                 <div className="p-4 border-b flex items-center">
                   {isMobile && (
                     <Button 
@@ -189,12 +178,14 @@ const MessagesPage: React.FC = () => {
                   </Link>
                 </div>
                 
-                {/* Messages */}
-                <div className="flex-grow p-4 overflow-y-auto">
+                <ScrollArea className="flex-grow p-4">
                   {conversation && conversation.messages.length > 0 ? (
-                    conversation.messages.map((message) => (
-                      <MessageBubble key={message.id} message={message} />
-                    ))
+                    <div className="space-y-4">
+                      {conversation.messages.map((message) => (
+                        <MessageBubble key={message.id} message={message} />
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
@@ -205,10 +196,8 @@ const MessagesPage: React.FC = () => {
                       </div>
                     </div>
                   )}
-                  <div ref={messagesEndRef} />
-                </div>
+                </ScrollArea>
                 
-                {/* Message Input */}
                 <div className="p-4 border-t">
                   <form onSubmit={handleSendMessage} className="flex">
                     <Input

@@ -14,7 +14,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   
   return (
     <div 
-      className={`flex ${isCurrentUserMessage ? 'justify-end' : 'justify-start'} mb-4`}
+      className={`flex ${isCurrentUserMessage ? 'justify-end' : 'justify-start'}`}
       data-message-type={isCurrentUserMessage ? 'sent' : 'received'}
     >
       <div 
