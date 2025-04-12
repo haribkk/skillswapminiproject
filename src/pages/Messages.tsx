@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
@@ -10,11 +11,13 @@ import { Link } from 'react-router-dom';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useFirebaseChat } from '@/hooks/useFirebaseChat';
+import { toast } from '@/components/ui/use-toast';
 
 const MessagesPage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const navigate = useNavigate();
-  const { currentUser, users, conversations, sendMessage, getConversation, markConversationAsRead } = useApp();
+  const { currentUser, users, conversations } = useApp();
   
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -23,10 +26,15 @@ const MessagesPage: React.FC = () => {
   
   const otherUser = userId ? users.find(user => user.id === userId) : undefined;
   
-  const conversation = userId && currentUser 
-    ? getConversation(currentUser.id, userId)
-    : undefined;
+  const { 
+    messages, 
+    loading, 
+    error, 
+    sendMessage: sendFirebaseMessage, 
+    markAsRead 
+  } = useFirebaseChat(currentUser?.id, userId);
   
+  // Filter conversations for the sidebar
   const filteredConversations = conversations.filter(conv => {
     if (!currentUser) return false;
     
@@ -44,30 +52,30 @@ const MessagesPage: React.FC = () => {
     return true;
   });
   
+  // Mark messages as read when conversation is opened
   useEffect(() => {
-    if (userId && currentUser && conversation) {
-      markConversationAsRead(currentUser.id, userId);
+    if (userId && currentUser) {
+      markAsRead();
     }
-  }, [userId, currentUser, conversation]);
+  }, [userId, currentUser, markAsRead]);
   
+  // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversation]);
+  }, [messages]);
   
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!messageText.trim() || !currentUser || !otherUser) return;
-    
-    sendMessage({
-      senderId: currentUser.id,
-      receiverId: otherUser.id,
-      content: messageText,
-    });
-    
-    setMessageText('');
-  };
+  // Handle error in chat
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Chat Error",
+        description: "There was an error loading messages. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [error]);
   
+  // Auto-select first conversation on desktop
   useEffect(() => {
     if (!userId && conversations.length > 0 && currentUser && !isMobile) {
       const firstConv = conversations[0];
@@ -77,6 +85,24 @@ const MessagesPage: React.FC = () => {
       }
     }
   }, [userId, conversations, currentUser, navigate, isMobile]);
+  
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!messageText.trim() || !currentUser || !otherUser) return;
+    
+    const success = await sendFirebaseMessage(messageText);
+    
+    if (success) {
+      setMessageText('');
+    } else {
+      toast({
+        title: "Message not sent",
+        description: "There was an error sending your message. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
   
   if (!currentUser) {
     return (
@@ -179,9 +205,15 @@ const MessagesPage: React.FC = () => {
                 </div>
                 
                 <ScrollArea className="flex-grow p-4">
-                  {conversation && conversation.messages.length > 0 ? (
+                  {loading ? (
+                    <div className="flex items-center justify-center h-full">
+                      <div className="text-center">
+                        <p className="text-muted-foreground mb-2">Loading messages...</p>
+                      </div>
+                    </div>
+                  ) : messages.length > 0 ? (
                     <div className="space-y-4">
-                      {conversation.messages.map((message) => (
+                      {messages.map((message) => (
                         <MessageBubble key={message.id} message={message} />
                       ))}
                       <div ref={messagesEndRef} />

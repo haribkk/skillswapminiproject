@@ -3,6 +3,7 @@ import React from 'react';
 import { Message } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 import { useApp } from '../context/AppContext';
+import { Loader2 } from 'lucide-react';
 
 interface MessageBubbleProps {
   message: Message;
@@ -11,6 +12,32 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const { currentUser } = useApp();
   const isCurrentUserMessage = message.senderId === currentUser?.id;
+  
+  // Handle Firebase serverTimestamp which may be in a different format
+  const formatTimestamp = () => {
+    try {
+      if (!message.timestamp) return '';
+      
+      // If timestamp is a Firebase server timestamp object
+      if (typeof message.timestamp === 'object' && message.timestamp !== null) {
+        // @ts-ignore - Handle Firebase timestamp
+        const seconds = message.timestamp.seconds || 0;
+        // @ts-ignore
+        const nanoseconds = message.timestamp.nanoseconds || 0;
+        if (seconds) {
+          // Convert Firebase timestamp to milliseconds
+          const milliseconds = seconds * i000 + nanoseconds / 1000000;
+          return formatDistanceToNow(new Date(milliseconds), { addSuffix: true });
+        }
+      }
+      
+      // Regular string timestamp
+      return formatDistanceToNow(new Date(message.timestamp), { addSuffix: true });
+    } catch (error) {
+      console.error("Error formatting timestamp:", error);
+      return '(unknown time)';
+    }
+  };
   
   return (
     <div 
@@ -24,13 +51,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
             : 'bg-secondary text-secondary-foreground rounded-tl-none'
         }`}
       >
-        <p className="text-sm">{message.content}</p>
+        <p className="text-sm break-words">{message.content}</p>
         <div 
-          className={`text-xs mt-1 ${
+          className={`text-xs mt-1 flex items-center ${
             isCurrentUserMessage ? 'text-primary-foreground/70' : 'text-muted-foreground'
           }`}
         >
-          {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+          {message.timestamp ? (
+            formatTimestamp()
+          ) : (
+            <>
+              <Loader2 className="animate-spin h-3 w-3 mr-1" />
+              <span>Sending...</span>
+            </>
+          )}
         </div>
       </div>
     </div>
