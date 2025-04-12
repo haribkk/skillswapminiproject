@@ -26,7 +26,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
         const nanoseconds = message.timestamp.nanoseconds || 0;
         if (seconds) {
           // Convert Firebase timestamp to milliseconds
-          const milliseconds = seconds * i000 + nanoseconds / 1000000;
+          const milliseconds = seconds * 1000 + nanoseconds / 1000000;
           return formatDistanceToNow(new Date(milliseconds), { addSuffix: true });
         }
       }

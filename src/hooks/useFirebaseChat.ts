@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { ref, onValue, push, set, serverTimestamp, query, orderByChild } from 'firebase/database';
 import { db } from '../integrations/firebase/client';
@@ -122,13 +121,13 @@ export const useFirebaseChat = (currentUserId: string | undefined, otherUserId: 
       const userConversationRef = ref(db, `users/${currentUserId}/conversations/${otherUserId}`);
       await set(userConversationRef, {
         unread: false
-      }, { merge: true });
+      });
       
       // Mark all received messages as read
       messages.forEach(async (message) => {
         if (message.receiverId === currentUserId && !message.read) {
           const messageRef = ref(db, `conversations/${conversationId}/messages/${message.id}`);
-          await set(messageRef, { read: true }, { merge: true });
+          await set(messageRef, { read: true });
         }
       });
     } catch (err) {
