@@ -19,6 +19,11 @@ import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import HowItWorks from "./pages/HowItWorks";
 import Auth from "./pages/Auth";
+import Contact from "./pages/Contact";
+import Careers from "./pages/Careers";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import CookiePolicy from "./pages/CookiePolicy";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +50,11 @@ const App = () => (
                   <Route path="/about" element={<About />} />
                   <Route path="/how-it-works" element={<HowItWorks />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/careers" element={<Careers />} />
+                  <Route path="/privacy" element={<Privacy />} />
+                  <Route path="/terms" element={<Terms />} />
+                  <Route path="/cookie-policy" element={<CookiePolicy />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </main>
