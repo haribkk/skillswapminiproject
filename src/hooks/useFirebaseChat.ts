@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from 'react';
-import { ref, onValue, push, set, serverTimestamp, query, orderByChild } from 'firebase/database';
+import { ref, onValue, push, set, serverTimestamp, query, orderByChild, update } from 'firebase/database';
 import { db } from '../integrations/firebase/client';
 import { Message } from '../types';
 
@@ -43,13 +43,28 @@ export const useFirebaseChat = (currentUserId: string | undefined, otherUserId: 
 
         // Sort messages by timestamp
         messageList.sort((a, b) => {
-          const aTime = new Date(a.timestamp).getTime();
-          const bTime = new Date(b.timestamp).getTime();
-          return aTime - bTime;
+          // Handle Firebase server timestamps which might be objects
+          const getTime = (timestamp: any) => {
+            if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+              return timestamp.seconds * 1000;
+            }
+            return new Date(timestamp || 0).getTime();
+          };
+          
+          return getTime(a.timestamp) - getTime(b.timestamp);
         });
 
         setMessages(messageList);
         setLoading(false);
+        
+        // Mark messages as read if the current user is the receiver
+        const unreadMessages = messageList.filter(
+          msg => msg.receiverId === currentUserId && !msg.read
+        );
+        
+        if (unreadMessages.length > 0) {
+          markAsRead();
+        }
       } catch (err) {
         console.error("Error loading messages:", err);
         setError(err instanceof Error ? err : new Error('Unknown error'));
@@ -86,22 +101,26 @@ export const useFirebaseChat = (currentUserId: string | undefined, otherUserId: 
       
       await set(newMessageRef, newMessage);
 
-      // Update last message for both users for quick conversation access
-      const userARef = ref(db, `users/${currentUserId}/conversations/${otherUserId}`);
-      const userBRef = ref(db, `users/${otherUserId}/conversations/${currentUserId}`);
+      // Update conversation metadata for both sender and receiver
+      const senderRef = ref(db, `users/${currentUserId}/conversations/${otherUserId}`);
+      const receiverRef = ref(db, `users/${otherUserId}/conversations/${currentUserId}`);
       
-      const conversationData = {
+      const senderData = {
         lastMessage: content.trim(),
         timestamp: serverTimestamp(),
-        unread: true
+        unread: false,
+        lastMessageSentByMe: true
       };
       
-      await set(userARef, {
-        ...conversationData,
-        unread: false
-      });
+      const receiverData = {
+        lastMessage: content.trim(),
+        timestamp: serverTimestamp(),
+        unread: true,
+        lastMessageSentByMe: false
+      };
       
-      await set(userBRef, conversationData);
+      await set(senderRef, senderData);
+      await set(receiverRef, receiverData);
       
       return true;
     } catch (err) {
@@ -120,17 +139,17 @@ export const useFirebaseChat = (currentUserId: string | undefined, otherUserId: 
       
       // Update the unread status for the current user's conversation with other user
       const userConversationRef = ref(db, `users/${currentUserId}/conversations/${otherUserId}`);
-      await set(userConversationRef, {
+      await update(userConversationRef, {
         unread: false
       });
       
       // Mark all received messages as read
-      messages.forEach(async (message) => {
+      for (const message of messages) {
         if (message.receiverId === currentUserId && !message.read) {
           const messageRef = ref(db, `conversations/${conversationId}/messages/${message.id}`);
-          await set(messageRef, { read: true });
+          await update(messageRef, { read: true });
         }
-      });
+      }
     } catch (err) {
       console.error("Error marking messages as read:", err);
     }

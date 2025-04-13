@@ -13,16 +13,20 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useFirebaseChat } from '@/hooks/useFirebaseChat';
 import { toast } from '@/components/ui/use-toast';
+import { ref, onValue } from 'firebase/database';
+import { db } from '@/integrations/firebase/client';
+import { Conversation } from '@/types';
 
 const MessagesPage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const navigate = useNavigate();
-  const { currentUser, users, conversations } = useApp();
+  const { currentUser, users } = useApp();
   
   const [messageText, setMessageText] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [activeTab, setActiveTab] = useState('all');
   const isMobile = useIsMobile();
+  const [firebaseConversations, setFirebaseConversations] = useState<Conversation[]>([]);
   
   const otherUser = userId ? users.find(user => user.id === userId) : undefined;
   
@@ -34,19 +38,83 @@ const MessagesPage: React.FC = () => {
     markAsRead 
   } = useFirebaseChat(currentUser?.id, userId);
   
+  // Listen for real-time conversation updates from Firebase
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    
+    const userConversationsRef = ref(db, `users/${currentUser.id}/conversations`);
+    
+    const unsubscribe = onValue(userConversationsRef, (snapshot) => {
+      try {
+        const data = snapshot.val();
+        if (!data) {
+          setFirebaseConversations([]);
+          return;
+        }
+        
+        const conversationList: Conversation[] = Object.entries(data).map(([otherId, metadata]: [string, any]) => {
+          const participantIds = [currentUser.id, otherId];
+          
+          // Create a mock message for display purposes
+          const mockMessage = {
+            id: `last-${otherId}`,
+            senderId: metadata.lastMessageSentByMe ? currentUser.id : otherId,
+            receiverId: metadata.lastMessageSentByMe ? otherId : currentUser.id,
+            content: metadata.lastMessage || '',
+            timestamp: metadata.timestamp,
+            read: !metadata.unread
+          };
+          
+          return {
+            id: participantIds.sort().join('_'),
+            participantIds: participantIds,
+            messages: [mockMessage],
+            lastMessageTimestamp: metadata.timestamp,
+            unreadCount: metadata.unread ? 1 : 0
+          };
+        });
+        
+        // Sort by most recent message
+        conversationList.sort((a, b) => {
+          const getTime = (timestamp: any) => {
+            if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+              return timestamp.seconds * 1000;
+            }
+            return new Date(timestamp || 0).getTime();
+          };
+          
+          return getTime(b.lastMessageTimestamp) - getTime(a.lastMessageTimestamp);
+        });
+        
+        setFirebaseConversations(conversationList);
+      } catch (err) {
+        console.error("Error loading conversations:", err);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [currentUser?.id]);
+  
   // Filter conversations for the sidebar
-  const filteredConversations = conversations.filter(conv => {
+  const filteredConversations = firebaseConversations.filter(conv => {
     if (!currentUser) return false;
     
     if (activeTab === 'all') return true;
     
+    // Get the other participant's ID
     const otherParticipantId = conv.participantIds.find(id => id !== currentUser.id);
-    const lastMessage = conv.messages[conv.messages.length - 1];
+    if (!otherParticipantId) return false;
+    
+    // Get the last message from this conversation
+    const lastMessage = conv.messages[0];
+    if (!lastMessage) return false;
     
     if (activeTab === 'sent') {
-      return lastMessage && lastMessage.senderId === currentUser.id;
+      // Show in "sent" tab if the last message was sent by current user
+      return lastMessage.senderId === currentUser.id;
     } else if (activeTab === 'received') {
-      return lastMessage && lastMessage.senderId !== currentUser.id;
+      // Show in "received" tab if the last message was received by current user
+      return lastMessage.senderId !== currentUser.id;
     }
     
     return true;
@@ -77,14 +145,14 @@ const MessagesPage: React.FC = () => {
   
   // Auto-select first conversation on desktop
   useEffect(() => {
-    if (!userId && conversations.length > 0 && currentUser && !isMobile) {
-      const firstConv = conversations[0];
+    if (!userId && firebaseConversations.length > 0 && currentUser && !isMobile) {
+      const firstConv = firebaseConversations[0];
       const otherParticipantId = firstConv.participantIds.find(id => id !== currentUser.id);
       if (otherParticipantId) {
         navigate(`/messages/${otherParticipantId}`);
       }
     }
-  }, [userId, conversations, currentUser, navigate, isMobile]);
+  }, [userId, firebaseConversations, currentUser, navigate, isMobile]);
   
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

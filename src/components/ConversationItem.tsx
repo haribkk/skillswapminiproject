@@ -18,10 +18,34 @@ const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, isAct
   const otherUser = otherUserId ? getUserById(otherUserId) : undefined;
   
   // Get the last message
-  const lastMessage = conversation.messages[conversation.messages.length - 1];
-  const isUnread = lastMessage && !lastMessage.read && lastMessage.receiverId === currentUser?.id;
+  const lastMessage = conversation.messages[0];
+  const isUnread = conversation.unreadCount > 0;
   
   if (!otherUser) return null;
+  
+  // Format timestamp for Firebase timestamps
+  const formatTimestamp = (timestamp: any) => {
+    try {
+      if (!timestamp) return '';
+      
+      // If timestamp is a Firebase server timestamp object
+      if (typeof timestamp === 'object' && timestamp !== null) {
+        if ('seconds' in timestamp) {
+          // Convert Firebase timestamp to milliseconds
+          const seconds = timestamp.seconds || 0;
+          const nanoseconds = timestamp.nanoseconds || 0;
+          const milliseconds = seconds * 1000 + nanoseconds / 1000000;
+          return formatDistanceToNow(new Date(milliseconds), { addSuffix: true });
+        }
+      }
+      
+      // Regular string timestamp
+      return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+    } catch (error) {
+      console.error("Error formatting timestamp:", error);
+      return '(unknown time)';
+    }
+  };
   
   return (
     <Link
@@ -36,14 +60,21 @@ const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, isAct
             src={otherUser.profilePicture} 
             alt={otherUser.name} 
             className="w-full h-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
           />
+          <div className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground text-lg font-medium">
+            {otherUser.name ? otherUser.name.charAt(0).toUpperCase() : '?'}
+          </div>
         </div>
         <div className="flex-grow min-w-0">
           <div className="flex justify-between items-baseline">
             <h4 className="font-medium truncate mr-2">{otherUser.name}</h4>
-            {lastMessage && (
+            {lastMessage && lastMessage.timestamp && (
               <span className="text-xs text-muted-foreground whitespace-nowrap">
-                {formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true })}
+                {formatTimestamp(lastMessage.timestamp)}
               </span>
             )}
           </div>

@@ -18,14 +18,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
     try {
       if (!message.timestamp) return '';
       
-      // If timestamp is a Firebase server timestamp object
+      // If timestamp is a Firebase server timestamp object with seconds
       if (typeof message.timestamp === 'object' && message.timestamp !== null) {
-        // @ts-ignore - Handle Firebase timestamp
-        const seconds = message.timestamp.seconds || 0;
-        // @ts-ignore
-        const nanoseconds = message.timestamp.nanoseconds || 0;
-        if (seconds) {
+        if ('seconds' in message.timestamp) {
           // Convert Firebase timestamp to milliseconds
+          const seconds = message.timestamp.seconds || 0;
+          const nanoseconds = message.timestamp.nanoseconds || 0;
           const milliseconds = seconds * 1000 + nanoseconds / 1000000;
           return formatDistanceToNow(new Date(milliseconds), { addSuffix: true });
         }
@@ -58,12 +56,17 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           }`}
         >
           {message.timestamp ? (
-            formatTimestamp()
+            <span>{formatTimestamp()}</span>
           ) : (
             <>
               <Loader2 className="animate-spin h-3 w-3 mr-1" />
               <span>Sending...</span>
             </>
+          )}
+          {isCurrentUserMessage && (
+            <span className="ml-1">
+              {message.read ? ' • Read' : ''}
+            </span>
           )}
         </div>
       </div>
