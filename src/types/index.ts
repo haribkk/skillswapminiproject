@@ -36,7 +36,7 @@ export interface Message {
   senderId: string;
   receiverId: string;
   content: string;
-  timestamp: string;
+  timestamp: any | null; // Updated to explicitly allow null
   read: boolean;
 }
 

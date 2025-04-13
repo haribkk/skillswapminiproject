@@ -16,6 +16,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   // Handle Firebase serverTimestamp which may be in a different format
   const formatTimestamp = () => {
     try {
+      // Add null check before accessing message.timestamp
       if (!message.timestamp) return '';
       
       // If timestamp is a Firebase server timestamp object with seconds
