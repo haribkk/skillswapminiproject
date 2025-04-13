@@ -4,6 +4,8 @@ import { User } from '../types';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getInitials } from '@/utils/userUtils';
 
 interface ConversationHeaderProps {
   otherUser: User;
@@ -30,20 +32,13 @@ const ConversationHeader: React.FC<ConversationHeaderProps> = ({
       )}
       
       <Link to={`/profile/${otherUser.id}`} className="flex items-center">
-        <div className="w-10 h-10 rounded-full overflow-hidden mr-3">
-          <img 
+        <Avatar className="w-10 h-10 mr-3">
+          <AvatarImage 
             src={otherUser.profilePicture} 
-            alt={otherUser.name} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
+            alt={otherUser.name}
           />
-          <div className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground text-lg font-medium">
-            {otherUser.name ? otherUser.name.charAt(0).toUpperCase() : '?'}
-          </div>
-        </div>
+          <AvatarFallback>{getInitials(otherUser.name, true)}</AvatarFallback>
+        </Avatar>
         <div>
           <h3 className="font-medium">{otherUser.name}</h3>
           <p className="text-xs text-muted-foreground">{otherUser.location}</p>

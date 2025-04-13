@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { Conversation } from '../types';
 import { formatDistanceToNow } from 'date-fns';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getInitials } from '@/utils/userUtils';
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -55,20 +57,13 @@ const ConversationItem: React.FC<ConversationItemProps> = ({ conversation, isAct
       } ${isUnread ? 'font-semibold' : ''}`}
     >
       <div className="flex items-center">
-        <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
-          <img 
+        <Avatar className="w-12 h-12 mr-3">
+          <AvatarImage 
             src={otherUser.profilePicture} 
-            alt={otherUser.name} 
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement;
-              target.style.display = 'none';
-            }}
+            alt={otherUser.name}
           />
-          <div className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground text-lg font-medium">
-            {otherUser.name ? otherUser.name.charAt(0).toUpperCase() : '?'}
-          </div>
-        </div>
+          <AvatarFallback>{getInitials(otherUser.name, true)}</AvatarFallback>
+        </Avatar>
         <div className="flex-grow min-w-0">
           <div className="flex justify-between items-baseline">
             <h4 className="font-medium truncate mr-2">{otherUser.name}</h4>
