@@ -10,11 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { toast } from '@/components/ui/use-toast';
 
 const SwapProposalForm: React.FC = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
-  const { currentUser, users, createSwapProposal } = useApp();
+  const { currentUser, users, createSwapProposal, sendMessage } = useApp();
   
   const otherUser = userId ? users.find(user => user.id === userId) : undefined;
   
@@ -44,7 +45,14 @@ const SwapProposalForm: React.FC = () => {
     const offeredSkill = currentUser.teachableSkills.find(skill => skill.id === offeredSkillId);
     const requestedSkill = otherUser.teachableSkills.find(skill => skill.id === requestedSkillId);
     
-    if (!offeredSkill || !requestedSkill) return;
+    if (!offeredSkill || !requestedSkill) {
+      toast({
+        title: "Missing Skills",
+        description: "Please select the skills you want to teach and learn.",
+        variant: "destructive"
+      });
+      return;
+    }
     
     createSwapProposal({
       proposerId: currentUser.id,
@@ -56,6 +64,19 @@ const SwapProposalForm: React.FC = () => {
       learningGoals,
     });
     
+    // Explicitly send a message about the proposal
+    sendMessage({
+      senderId: currentUser.id,
+      receiverId: otherUser.id,
+      content: `I've sent you a skill swap proposal! I'd like to teach you ${offeredSkill.name} in exchange for learning ${requestedSkill.name}.`,
+    });
+    
+    toast({
+      title: "Proposal Sent",
+      description: `Your swap proposal has been sent to ${otherUser.name}.`
+    });
+    
+    // Navigate to messages view with this user
     navigate(`/messages/${otherUser.id}`);
   };
   
