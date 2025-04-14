@@ -47,3 +47,18 @@ export interface Conversation {
   unreadCount: number;
   messages: Message[];
 }
+
+export type ProposalStatus = 'pending' | 'accepted' | 'declined' | 'completed';
+
+export interface SwapProposal {
+  id: string;
+  proposerId: string;
+  recipientId: string;
+  offeredSkill: Skill;
+  requestedSkill: Skill;
+  proposedSchedule: string;
+  learningGoals: string;
+  duration: string;
+  status: ProposalStatus;
+  createdAt: string;
+}
