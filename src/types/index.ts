@@ -1,3 +1,13 @@
+
+export type ProficiencyLevel = 'beginner' | 'intermediate' | 'expert';
+export type LocationPreference = 'in-person' | 'online' | 'both';
+
+export interface Skill {
+  id: string;
+  name: string;
+  proficiency?: ProficiencyLevel;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -5,7 +15,7 @@ export interface User {
   bio: string;
   profilePicture: string;
   location: string;
-  locationPreference: 'in-person' | 'online' | 'both';
+  locationPreference: LocationPreference;
   teachableSkills: Skill[];
   desiredSkills: Skill[];
   availability: string;
@@ -21,38 +31,32 @@ export interface User {
   };
 }
 
-export interface Skill {
-  id: string;
-  name: string;
-  proficiency?: 'beginner' | 'intermediate' | 'expert';
-}
-
-export interface Conversation {
-  id: string;
-  participantIds: string[];
-  messages: Message[];
-  lastMessageTimestamp: any;
-  unreadCount: number;
-}
-
 export interface Message {
   id: string;
   senderId: string;
   receiverId: string;
   content: string;
-  timestamp: any;
+  timestamp: any | null; // Updated to explicitly allow null
   read: boolean;
 }
 
-export interface AppContextValue {
-  currentUser: User | null;
-  users: User[];
-  getUserById: (id: string) => User | undefined;
-  updateCurrentUser: (user: User) => void;
-  userConversationsMap: { [userId: string]: any };
-  getTotalUnreadMessages: () => number;
+export interface SwapProposal {
+  id: string;
+  proposerId: string;
+  recipientId: string;
+  offeredSkill: Skill;
+  requestedSkill: Skill;
+  proposedSchedule: string;
+  learningGoals: string;
+  duration: string;
+  status: 'pending' | 'accepted' | 'declined' | 'completed';
+  createdAt: string;
 }
 
-export interface AppProviderProps {
-  children: React.ReactNode;
+export interface Conversation {
+  id: string;
+  participantIds: string[];
+  lastMessageTimestamp: string;
+  unreadCount: number;
+  messages: Message[];
 }
