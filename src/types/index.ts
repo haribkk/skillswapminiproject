@@ -40,19 +40,6 @@ export interface Message {
   read: boolean;
 }
 
-export interface SwapProposal {
-  id: string;
-  proposerId: string;
-  recipientId: string;
-  offeredSkill: Skill;
-  requestedSkill: Skill;
-  proposedSchedule: string;
-  learningGoals: string;
-  duration: string;
-  status: 'pending' | 'accepted' | 'declined' | 'completed';
-  createdAt: string;
-}
-
 export interface Conversation {
   id: string;
   participantIds: string[];

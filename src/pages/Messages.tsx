@@ -8,6 +8,7 @@ import { useFirebaseChat } from '@/hooks/useFirebaseChat';
 import { toast } from '@/components/ui/use-toast';
 import { ref, onValue } from 'firebase/database';
 import { db } from '@/integrations/firebase/client';
+import { useAuth } from '../context/AuthContext';
 
 // Imported components
 import ConversationList from '@/components/ConversationList';
@@ -21,6 +22,7 @@ const MessagesPage: React.FC = () => {
   const { userId } = useParams<{ userId?: string }>();
   const navigate = useNavigate();
   const { currentUser, users } = useApp();
+  const { user, loading: authLoading } = useAuth();
   
   const [activeTab, setActiveTab] = useState('all');
   const isMobile = useIsMobile();
@@ -152,8 +154,28 @@ const MessagesPage: React.FC = () => {
     return await sendFirebaseMessage(text);
   };
   
-  if (!currentUser) {
+  // Show loading state while auth is being checked
+  if (authLoading) {
+    return (
+      <div className="container mx-auto p-4 flex justify-center items-center h-[calc(100vh-64px-150px)]">
+        <p>Loading...</p>
+      </div>
+    );
+  }
+  
+  // Only check for user auth after loading is complete
+  if (!user) {
     return <SignInRequired />;
+  }
+  
+  // Now check for currentUser from AppContext
+  if (!currentUser) {
+    // If auth user exists but currentUser doesn't, we're likely still loading the profile
+    return (
+      <div className="container mx-auto p-4 flex justify-center items-center h-[calc(100vh-64px-150px)]">
+        <p>Loading user profile...</p>
+      </div>
+    );
   }
   
   const showConversationList = isMobile && !userId;
