@@ -57,6 +57,9 @@ const ProfilePhotoSection: React.FC<ProfilePhotoSectionProps> = ({
     }
   };
   
+  // Generate proper initials for the fallback
+  const userInitials = currentUser?.name ? getInitials(currentUser.name, true) : 'U';
+  
   return (
     <Card>
       <CardContent className="pt-6">
@@ -64,8 +67,13 @@ const ProfilePhotoSection: React.FC<ProfilePhotoSectionProps> = ({
         <div className="flex flex-col items-center">
           <div className="relative w-32 h-32 mb-4">
             <Avatar className="w-full h-full">
-              <AvatarImage src={profilePicture} />
-              <AvatarFallback>{currentUser?.name ? getInitials(currentUser.name, true) : 'U'}</AvatarFallback>
+              {profilePicture ? (
+                <AvatarImage 
+                  src={profilePicture} 
+                  alt={currentUser?.name || 'Profile'} 
+                />
+              ) : null}
+              <AvatarFallback className="text-4xl">{userInitials}</AvatarFallback>
             </Avatar>
             <label 
               htmlFor="profile-photo-upload" 

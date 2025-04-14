@@ -14,17 +14,21 @@ interface UserCardProps {
 }
 
 const UserCard: React.FC<UserCardProps> = ({ user }) => {
+  // Generate the initials for the avatar fallback
+  const userInitials = getInitials(user.name, true);
+  
   return (
     <Card className="h-full flex flex-col">
       <CardContent className="pt-6 flex-grow">
         <div className="flex flex-col items-center mb-4">
           <Avatar className="w-20 h-20 mb-3">
-            <AvatarImage 
-              src={user.profilePicture} 
-              alt={user.name} 
-              className="w-full h-full object-cover"
-            />
-            <AvatarFallback>{getInitials(user.name, true)}</AvatarFallback>
+            {user.profilePicture ? (
+              <AvatarImage 
+                src={user.profilePicture} 
+                alt={user.name}
+              />
+            ) : null}
+            <AvatarFallback className="text-xl">{userInitials}</AvatarFallback>
           </Avatar>
           <h3 className="text-lg font-semibold text-center">{user.name}</h3>
           <div className="flex items-center text-yellow-500 mt-1">

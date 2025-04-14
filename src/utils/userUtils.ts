@@ -10,16 +10,18 @@
  * @returns The initials (first letter of each word in the name, or just first initial)
  */
 export const getInitials = (name: string, firstNameOnly: boolean = false): string => {
-  if (!name) return '?';
+  if (!name || name.trim() === '') return '?';
   
   if (firstNameOnly) {
     // Return just the first letter of the first word
     return name.trim().charAt(0).toUpperCase();
   }
   
+  // Get all initials
   return name
+    .trim()
     .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase();
+    .map(n => (n && n.length > 0) ? n[0].toUpperCase() : '')
+    .filter(Boolean) // Remove empty strings
+    .join('');
 };

@@ -31,7 +31,7 @@ const mapProfileToUser = (profile: UserWithSkills): User => {
     name: profile.name,
     email: profile.email || '',
     bio: profile.bio || '',
-    profilePicture: profile.profile_picture || '/placeholder.svg',
+    profilePicture: profile.profile_picture || '', // No default placeholder here, let the Avatar handle that
     location: profile.location || '',
     locationPreference: (profile.location_preference || 'both') as 'in-person' | 'online' | 'both',
     teachableSkills: profile.teachable_skills.map(skill => ({
