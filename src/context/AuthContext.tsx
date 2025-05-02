@@ -21,14 +21,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user || null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
@@ -36,14 +29,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user || null);
+      setLoading(false);
+    });
+
     return () => subscription.unsubscribe();
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error, data } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      
+      // If we have a session but no user, something went wrong
+      if (data.session && !data.user) {
+        throw new Error("Failed to retrieve user information");
+      }
+      
+      return;
     } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
         title: "Sign in failed",
         description: error.message || "An error occurred during sign in.",
@@ -55,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, name: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { error, data } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -64,13 +72,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       });
+      
       if (error) throw error;
       
-      toast({
-        title: "Account created",
-        description: "Your account has been created. You can now sign in.",
-      });
+      // Check if email confirmation is required
+      if (data?.user?.identities?.length === 0) {
+        toast({
+          title: "Email confirmation required",
+          description: "Please check your email for a confirmation link.",
+        });
+      } else {
+        toast({
+          title: "Account created",
+          description: "Your account has been created. You can now sign in.",
+        });
+      }
     } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
         title: "Sign up failed",
         description: error.message || "An error occurred during sign up.",
@@ -85,11 +103,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error: any) {
+      console.error("Auth error:", error);
       toast({
         title: "Sign out failed",
         description: error.message || "An error occurred during sign out.",
         variant: "destructive"
       });
+      throw error;
     }
   };
 

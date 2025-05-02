@@ -12,19 +12,10 @@ interface MessageListProps {
 const MessageList: React.FC<MessageListProps> = ({ messages, loading }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Only auto-scroll to bottom when new messages are added
+  // Modified auto-scroll behavior: Only scroll if explicitly triggered
   useEffect(() => {
-    // Check if the current messages length is greater than 0 and we have a new message
-    if (messages.length > 0 && messagesEndRef.current) {
-      // Only scroll if we're viewing the last message (close to bottom)
-      const container = messagesEndRef.current.parentElement;
-      if (container) {
-        const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-        if (isAtBottom) {
-          messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
-    }
+    // Only scroll to bottom on manual action, not automatically
+    // The scrollIntoView method is maintained for a "scroll to bottom" feature if needed later
   }, [messages]);
 
   if (loading) {
