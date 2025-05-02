@@ -1,5 +1,5 @@
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { Message } from '../types';
 import MessageBubble from './MessageBubble';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,12 +11,6 @@ interface MessageListProps {
 
 const MessageList: React.FC<MessageListProps> = ({ messages, loading }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Modified auto-scroll behavior: Only scroll if explicitly triggered
-  useEffect(() => {
-    // Only scroll to bottom on manual action, not automatically
-    // The scrollIntoView method is maintained for a "scroll to bottom" feature if needed later
-  }, [messages]);
 
   if (loading) {
     return (

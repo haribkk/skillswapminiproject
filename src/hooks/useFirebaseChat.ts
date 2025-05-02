@@ -1,14 +1,16 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { ref, onValue, push, set, serverTimestamp, query, orderByChild, update } from 'firebase/database';
 import { db } from '../integrations/firebase/client';
-import { Message } from '../types';
+import { Message, Conversation } from '../types';
 
-export const useFirebaseChat = (currentUserId: string | undefined, otherUserId: string | undefined) => {
+export const useFirebaseChat = (currentUserId?: string, otherUserId?: string) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [firebaseConversations, setFirebaseConversations] = useState<Conversation[]>([]);
 
+  // Fetch messages for a conversation
   useEffect(() => {
     if (!currentUserId || !otherUserId) {
       setMessages([]);
@@ -79,6 +81,63 @@ export const useFirebaseChat = (currentUserId: string | undefined, otherUserId: 
     return () => unsubscribe();
   }, [currentUserId, otherUserId]);
 
+  // Fetch all conversations for the current user
+  useEffect(() => {
+    if (!currentUserId) return;
+    
+    const userConversationsRef = ref(db, `users/${currentUserId}/conversations`);
+    
+    const unsubscribe = onValue(userConversationsRef, (snapshot) => {
+      try {
+        const data = snapshot.val();
+        if (!data) {
+          setFirebaseConversations([]);
+          return;
+        }
+        
+        const conversationList: Conversation[] = Object.entries(data).map(([otherId, metadata]: [string, any]) => {
+          const participantIds = [currentUserId, otherId];
+          
+          // Create a mock message for display purposes
+          const mockMessage = {
+            id: `last-${otherId}`,
+            senderId: metadata.lastMessageSentByMe ? currentUserId : otherId,
+            receiverId: metadata.lastMessageSentByMe ? otherId : currentUserId,
+            content: metadata.lastMessage || '',
+            timestamp: metadata.timestamp,
+            read: !metadata.unread
+          };
+          
+          return {
+            id: participantIds.sort().join('_'),
+            participantIds: participantIds,
+            messages: [mockMessage],
+            lastMessageTimestamp: metadata.timestamp,
+            unreadCount: metadata.unread ? 1 : 0
+          };
+        });
+        
+        // Sort by most recent message
+        conversationList.sort((a, b) => {
+          const getTime = (timestamp: any) => {
+            if (timestamp && typeof timestamp === 'object' && 'seconds' in timestamp) {
+              return timestamp.seconds * 1000;
+            }
+            return new Date(timestamp || 0).getTime();
+          };
+          
+          return getTime(b.lastMessageTimestamp) - getTime(a.lastMessageTimestamp);
+        });
+        
+        setFirebaseConversations(conversationList);
+      } catch (err) {
+        console.error("Error loading conversations:", err);
+      }
+    });
+    
+    return () => unsubscribe();
+  }, [currentUserId]);
+
   const sendMessage = async (content: string) => {
     if (!currentUserId || !otherUserId || !content.trim()) {
       return false;
@@ -129,7 +188,7 @@ export const useFirebaseChat = (currentUserId: string | undefined, otherUserId: 
     }
   };
 
-  const markAsRead = async () => {
+  const markAsRead = useCallback(async () => {
     if (!currentUserId || !otherUserId) {
       return;
     }
@@ -153,13 +212,14 @@ export const useFirebaseChat = (currentUserId: string | undefined, otherUserId: 
     } catch (err) {
       console.error("Error marking messages as read:", err);
     }
-  };
+  }, [currentUserId, otherUserId, messages]);
 
   return {
     messages,
     loading,
     error,
     sendMessage,
-    markAsRead
+    markAsRead,
+    firebaseConversations
   };
 };
